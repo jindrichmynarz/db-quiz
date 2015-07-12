@@ -1,0 +1,7 @@
+(ns db-quiz.prod
+  (:require [db-quiz.core :as core]))
+
+;;ignore println statements in prod
+(set! *print-fn* (fn [& _]))
+
+(core/init!)
