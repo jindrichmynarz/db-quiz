@@ -24,7 +24,6 @@
         (reagent/flush)
         (.removeChild (.-body js/document) div)))))
 
-
 (defn found-in [re div]
   (let [res (.-innerHTML div)]
     (if (re-find re res)
@@ -32,8 +31,7 @@
       (do (println "Not found: " res)
           false))))
 
-
-(deftest test-home
-  (with-mounted-component (rc/home-page)
-    (fn [c div]
-      (is (found-in #"Welcome to" div)))))
+;(deftest test-home
+;  (with-mounted-component (rc/home-page)
+;    (fn [c div]
+;      (is (found-in #"Welcome to" div)))))
