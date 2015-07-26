@@ -1,12 +1,12 @@
 body {
-  font-family: 'Helvetica Neue', Verdana, Helvetica, Arial, sans-serif;
-  max-width: 600px;
+  font-family: Voces, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  max-width: 1000px;
   margin: 0 auto;
-  padding-top: 72px;
+  padding-top: 12px;
   -webkit-font-smoothing: antialiased;
-  font-size: 1.125em;
   color: #333;
   line-height: 1.5em;
+  text-align: center;
 }
 
 h1, h2, h3 {
@@ -17,7 +17,7 @@ h1 {
 }
 
 h2 {
-  font-size: 2em
+  font-size: 2em;
 }
 
 h3 {
@@ -31,4 +31,219 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+.font-small {
+  font-size: 62.5%;
+}
+
+.font-large {
+  font-size: 150%;
+}
+
+.vcenter {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#start-menu {
+  margin-top: 1em;
+}
+
+.form-control:focus {
+  border-color: #2c3e50;
+  box-shadow: inset 0 1px 1px rgba(44, 62, 80, 0.075), 0 0 8px rgba(44, 62, 80, 0.6);
+}
+
+#loading {
+  position: fixed;
+  top: 0;
+  right: 0;
+  padding: 5px 10px;
+  height: 50px;
+}
+
+#loading p {
+  margin-left: 38px;
+}
+
+#loadhex {
+  float: left;
+  position: relative;
+  width: 30px; 
+  height: 17.32px;
+  background-color: #000;
+  margin: 8.66px 0;
+
+  display: inline-block;
+  -webkit-animation-iteration-count: infinite;
+  -webkit-animation-timing-function: linear;
+  -webkit-animation-duration: 5s;
+  -webkit-animation-name: flag_tail;
+}
+
+@-webkit-keyframes flag_tail {
+  100% {-webkit-transform: rotate(360deg)}
+}
+
+#loadhex:before,
+#loadhex:after {
+  content: "";
+  position: absolute;
+  width: 0;
+  margin-left: -15px;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+}
+
+#loadhex:before {
+  bottom: 100%;
+  border-bottom: 8.66px solid #000000;
+}
+
+#loadhex:after {
+  top: 100%;
+  width: 0;
+  border-top: 8.66px solid #000000;
+}
+
+#hex-triangle {
+  /* background: #ccc; */
+  margin: 0 auto;
+}
+
+.hex-outer {
+  stroke: #000;
+}
+
+.hexagon.default:hover .hex-inner {
+  fill: url(#hover-inner);
+}
+.hexagon.default:hover .hex-outer {
+  fill: url(#hover-outer);
+}
+
+.active .hex-inner {
+  fill: url(#active-inner);
+}
+.active .hex-outer {
+  fill: url(#active-outer);
+}
+.hexagon.default .hex-inner {
+  cursor: pointer;
+}
+.hexagon.taken {
+  color: #fefefe;
+}
+.hexagon.taken text {
+  cursor: default !important;
+}
+
+#hex-triangle text {
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Vykradeno z <http://cssdeck.com/labs/large-pressable-css-button> */
+
+.button {
+  display: inline-block;
+  margin: 6px;
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  border-radius: 8px;
+  -webkit-box-shadow: 0 8px 0 #a5a8a8, 0 15px 20px rgba(0, 0, 0, .35);
+  -moz-box-shadow: 0 8px 0 #a5a8a8, 0 15px 20px rgba(0, 0, 0, .35);
+  box-shadow: 0 8px 0 #a5a8a8, 0 15px 20px rgba(0, 0, 0, .35);
+  -webkit-transition: -webkit-box-shadow .1s ease-in-out;
+  -moz-transition: -moz-box-shadow .1s ease-in-out;
+  -o-transition: -o-box-shadow .1s ease-in-out;
+  transition: box-shadow .1s ease-in-out;
+  font-size: 30px;
+  color: #2c3e50;
+}
+
+.button span {
+  display: inline-block;
+  padding: 20px 30px;
+  background-color: #dedede;
+  background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(hsla(0, 0%, 80%, .8)), to(hsla(0, 0%, 70%, .2)));
+  background-image: -webkit-linear-gradient(hsla(0, 0%, 80%, .8), hsla(0, 0%, 70%, .2));
+  background-image: -moz-linear-gradient(hsla(0, 0%, 80%, .8), hsla(0, 0%, 70%, .2));
+  background-image: -o-linear-gradient(hsla(0, 0%, 80%, .8), hsla(0, 0%, 70%, .2));
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  border-radius: 8px;
+  -webkit-box-shadow: inset 0 -1px 1px rgba(255, 255, 255, .15);
+  -moz-box-shadow: inset 0 -1px 1px rgba(255, 255, 255, .15);
+  box-shadow: inset 0 -1px 1px rgba(255, 255, 255, .15);
+  line-height: 1;
+  text-shadow: 0 -1px 1px rgba(76, 76, 76, .7);
+  -webkit-transition: background-color .2s ease-in-out, -webkit-transform .1s ease-in-out;
+  -moz-transition: background-color .2s ease-in-out, -moz-transform .1s ease-in-out;
+  -o-transition: background-color .2s ease-in-out, -o-transform .1s ease-in-out;
+  transition: background-color .2s ease-in-out, transform .1s ease-in-out;
+}
+
+.button:hover span {
+  color: #fff;
+  background-color: #fc4349;
+  text-shadow: 0 -1px 1px rgba(175, 175, 175, .9), 0 0 5px rgba(255, 255, 255, .8);
+  -webkit-box-shadow:    0 8px 0 #c6393c, 0 12px 10px rgba(0, 0, 0, .3);
+  -moz-box-shadow: 0 8px 0 #c6393c, 0 12px 10px rgba(0, 0, 0, .3);
+  box-shadow:    0 8px 0 #c6393c, 0 12px 10px rgba(0, 0, 0, .3);
+}
+
+.button:active span {
+  -webkit-transform: translate(0, 4px);
+  -moz-transform: translate(0, 4px);
+  -o-transform: translate(0, 4px);
+  transform: translate(0, 4px);
+}
+
+table {
+  border-spacing: 10px 0;
+}
+
+th {
+  text-align: left;
+}
+
+td {
+  padding-top: 10px;
+  vertical-align: top;
+}
+
+#on-turn {
+  width: 150px;
+  height: 150px;
+  font-size: 2em; 
+  position: fixed;
+  bottom: 0;
+  color: #fff;
+  background-color: #000;
+  -webkit-transform-style: preserve-3d;
+  -moz-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+}
+
+#on-turn.player-1 {
+  left: 0;
+  background-color: #fc4349;
+}
+
+#on-turn.player-2 {
+  right: 0;
+  background-color: #2c3e50;
+}
+
+#question-box {
+  /* background-color: #eee; */
+  margin-top: 1em;
+  bottom: 0;
+}
+
+#description {
+  text-align: justify;
 }
