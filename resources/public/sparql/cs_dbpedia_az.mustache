@@ -1,0 +1,62 @@
+{{!
+@param Array<URI> classes
+@param int        offset
+}}
+
+PREFIX dbo:  <http://dbpedia.org/ontology/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT (SAMPLE(?_s) AS ?s)
+        (SAMPLE(?_label) AS ?label)
+        (SAMPLE(?_description) AS ?description)
+WHERE {
+  {
+    SELECT ?_s
+            (STR(SAMPLE(?__label)) AS ?_label)
+            (STR(SAMPLE(?__description)) AS ?_description)
+    WHERE {
+      {
+        SELECT ?_s (COUNT(?link) AS ?inDegree)
+        WHERE {
+          GRAPH <http://cs.dbpedia.org> {
+            VALUES ?class {
+              {{#classes}}
+              <{{{.}}}>
+              {{/classes}}
+            }
+            ?_s a ?class .
+            ?link dbo:wikiPageWikiLink ?_s .
+          }
+        }
+        GROUP BY ?_s
+        ORDER BY DESC(?inDegree)
+        OFFSET {{offset}}
+        LIMIT 1000
+      }
+      GRAPH <http://cs.dbpedia.org> {
+        ?_s rdfs:label ?__label ;
+          dbo:abstract ?__description .
+        FILTER (!REGEX(?__label, "^(\\p{Lu}\\.?)+$") # Filter out abbreviations, such as "R.E.M.".
+                &&
+                !REGEX(?__label, "^.*\\d+.*$") # Eliminate digits
+                &&
+                (STRLEN(?__description) > 140) # Get only resources with longer descriptions. 
+                &&
+                langMatches(lang(?__label), "cs")
+                &&
+                langMatches(lang(?__description), "cs"))
+      }
+    }
+    GROUP BY ?_s
+  }
+  BIND (SUBSTR(?_label, 1, 1) AS ?_firstLetter)
+  # Filter to labels starting with a letter or "Ch".
+  FILTER (REGEX(?_firstLetter, "^[\u0000-\u007F].*$")
+          ||
+          REGEX(?_firstLetter, "^[ČŘŠŽ]$", "i")
+          ||
+          STRSTARTS(?_label, "Ch"))
+  BIND (IF(STRSTARTS(?_label, "Ch"), "Ch", UCASE(?_firstLetter)) AS ?firstLetter) 
+}
+GROUP BY ?firstLetter
+ORDER BY ASC(?firstLetter)

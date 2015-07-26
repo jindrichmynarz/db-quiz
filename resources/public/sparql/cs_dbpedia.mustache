@@ -1,0 +1,72 @@
+{{!
+@param Array<URI> classes
+@param int        limit
+@param int        offset
+}}
+
+PREFIX csdb:    <http://cs.dbpedia.org/property/>
+PREFIX dbo:     <http://dbpedia.org/ontology/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?subject
+      (STR(SAMPLE(?_label)) AS ?label)
+      (STR(SAMPLE(?_description)) AS ?description) 
+      (GROUP_CONCAT(DISTINCT ?surfaceForm ; separator = "|") AS ?surfaceForms)
+WHERE {
+  {
+    SELECT ?subject
+    WHERE {
+      {
+        SELECT ?subject (COUNT(?link) AS ?inDegree)
+        WHERE {
+          GRAPH <http://cs.dbpedia.org> {
+            VALUES ?class {
+              {{#classes}}
+              <{{{.}}}>
+              {{/classes}}
+            }
+            ?subject a ?class .
+            ?link dbo:wikiPageWikiLink ?subject .
+          }
+        }
+        GROUP BY ?subject
+        ORDER BY DESC(?inDegree)
+      }
+    }
+    OFFSET {{offset}}
+    LIMIT 1000
+  }
+  GRAPH <http://cs.dbpedia.org> {
+    ?subject rdfs:label ?_label ;
+      dbo:abstract ?_description .
+    FILTER (!REGEX(?_label, "^(\\p{Lu}\\.?)+$") {{! Filter out abbreviations, such as "R.E.M.". }}
+            &&
+            !REGEX(?_label, "^.*\\d+.*$") {{! Eliminate digits }}
+            &&
+            (STRLEN(?_description) > 140) {{! Get only resources with longer descriptions. }} 
+            &&
+            langMatches(lang(?_label), "cs")
+            &&
+            langMatches(lang(?_description), "cs"))
+    VALUES ?surfaceFormProperty {
+      csdb:name
+      csdb:název
+      csdb:příjmení
+      dbo:birthName
+      dbo:wikiPageWikiLinkText
+      dcterms:title
+    }
+    OPTIONAL {
+      ?subject ?surfaceFormProperty ?surfaceForm .
+      {{! Prevent empty surface forms }}
+      FILTER (isLiteral(?surfaceForm)
+              &&
+              STRLEN(STR(?surfaceForm)) > 2
+              &&
+              !regex(STR(?surfaceForm), "^\\s+$"))
+    }
+  }
+}
+GROUP BY ?subject
+LIMIT {{limit}}
