@@ -3,7 +3,7 @@
 (defonce config
   {; Number of hexagons on one side of the triangle
    :board-size 7
-   :colours {:active "#fafafa" 
+   :colours {:active "#eeeeee" 
              :default "#bcbcbc"
              :hover "#dedede"
              :missed "#333333"
@@ -16,7 +16,7 @@
    :layout {; Width of hexagon's border (in pixels)
             :border-width 1
             ; Radius of 1 hexagon composing the triangle (in pixels)
-            :hex-radius 30
+            :hex-radius 35
             ; Amount of hexagon's shading (in %)
             :hex-shade 20
             ; Hexagons will be embossed by offset (in %).
