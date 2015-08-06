@@ -12,3 +12,11 @@ pom.xml.asc
 /.repl
 *.log
 .cljs_rhino_repl
+
+### Vim ###
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~
