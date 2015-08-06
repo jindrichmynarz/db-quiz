@@ -13,7 +13,7 @@
                  [cljsjs/react "0.13.3-0"]
                  [cljsjs/mustache "1.1.0-0"]
                  [reagent "0.5.0"]
-                 [reagent-forms "0.5.4"]
+                 [reagent-forms "0.5.5"]
                  [reagent-utils "0.1.5"]
                  [ring "1.4.0"]
                  [ring/ring-defaults "0.1.5"]
@@ -23,7 +23,8 @@
                  [environ "1.0.0"]
                  [clj-tagsoup/clj-tagsoup "0.3.0" :exclusions [org.clojure/clojure]]
                  [cljs-http "0.1.35"]
-                 [secretary "1.2.3"]]
+                 [secretary "1.2.3"]
+                 [clj-fuzzy "0.3.1"]]
 
   :plugins [[lein-environ "1.0.0"]
             [lein-asset-minifier "0.2.2"]]
@@ -64,9 +65,9 @@
                                   [org.clojure/test.check "0.7.0"]]
 
                    :source-paths ["env/dev/clj"]
-                   :plugins [[lein-figwheel "0.3.3"]
-                             [lein-cljsbuild "1.0.6"]
-                             [com.cemerick/clojurescript.test "0.3.2"]]
+                   :plugins [[lein-doo "0.1.4-SNAPSHOT"]
+                             [lein-figwheel "0.3.3"]
+                             [lein-cljsbuild "1.0.6"]]
 
                    :injections [(require 'pjstadig.humane-test-output)
                                 (pjstadig.humane-test-output/activate!)]
@@ -84,13 +85,9 @@
                                                          :source-map true}}
                                         :test {:source-paths ["src/cljs"  "test/cljs"]
                                                :compiler {:output-to "target/test.js"
+                                                          :main 'db-quiz.runner
                                                           :optimizations :whitespace
-                                                          :pretty-print true}}}
-                               :test-commands {"unit" ["phantomjs" :runner
-                                                       "test/vendor/es5-shim.js"
-                                                       "test/vendor/es5-sham.js"
-                                                       "test/vendor/console-polyfill.js"
-                                                       "target/test.js"]}}}
+                                                          :pretty-print true}}}}}
 
              :uberjar {:hooks [leiningen.cljsbuild minify-assets.plugin/hooks]
                        :env {:production true}
