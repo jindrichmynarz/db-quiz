@@ -1,5 +1,5 @@
 (ns db-quiz.layout-test
-  (:require [cemerick.cljs.test :refer-macros [is are deftest testing use-fixtures done]]
+  (:require [cljs.test :refer-macros [are deftest is testing]]
             [db-quiz.layout :as layout]))
 
 (deftest shade-colour
