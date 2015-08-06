@@ -1,18 +1,8 @@
 (ns db-quiz.layout
   (:require [db-quiz.config :refer [config]]
+            [db-quiz.logic :as logic]
             [db-quiz.state :as state]
             [clojure.string :as string]))
-
-(defn toggle
-  "Toggle between 2 values given the current value"
-  [[one two] value]
-  (if (= one value)
-    two
-    one))
-
-(def toggle-player
-  "Toggling between players"
-  (partial toggle [:player-1 :player-2]))
 
 (defn shade-colour
   "Shade hexadecimal RGB colour by percent.
@@ -64,20 +54,12 @@
   "Generate hexagon of size containing text
   centered at center [x y]."
   [board {:keys [center id size text]}]
-  (let [switch-ownership (fn []
-                           (let [on-turn (:on-turn @state/app-state)
-                                 ownership (get-in @board [id :ownership])]
-                             (when (= ownership :default)
-                               (do (swap! board #(assoc-in % [id :ownership] on-turn))
-                                   (swap! state/app-state #(assoc % :current-field id)))
-                               (swap! state/app-state
-                                      #(assoc % :on-turn (toggle-player on-turn))))))
-        absolute-offset (* (/ size 100) (get-in config [:layout :inner-hex-offset]))
+  (let [absolute-offset (* (/ size 100) (get-in config [:layout :inner-hex-offset]))
         [x y] center]
     (fn []
       (let [ownership (name (get-in @board [id :ownership]))]
-        [:g {:class (str "hexagon " (if (= ownership "default") "default" "taken"))
-             :on-click switch-ownership} 
+        [:g {:class (string/join " " (conj ["hexagon"] (if (= ownership "default") "default" "taken")))
+             :on-click (partial logic/pick-field board id)} 
          [:polygon.hex-outer {:fill (str "url(#" ownership "-outer)")
                               :points (hex-coords center size)}]
          [:polygon.hex-inner {:fill (str "url(#" ownership "-inner)")

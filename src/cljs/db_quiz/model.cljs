@@ -73,7 +73,7 @@
 
 (defn truncate-description
   [description]
-  (let [maximum-length 300]
+  (let [maximum-length 500]
     (cond (> (count description) maximum-length)
           (str (trim (subs description 0 (- maximum-length 3))) "...")
           :else description)))
