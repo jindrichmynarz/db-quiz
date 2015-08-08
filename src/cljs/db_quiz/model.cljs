@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [replace])
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [db-quiz.config :refer [config]]
+            [db-quiz.state :refer [app-state]]
             [cljs-http.client :as http]
             [reagent.core :as reagent :refer [atom]]
             [cljs.core.async :refer [<! >! chan sliding-buffer]]
@@ -34,10 +35,6 @@
   }
   ORDER BY DESC(?order)
   LIMIT 10")
-
-; ----- Public vars -----
-
-(def loading? (atom false))
 
 ; ----- Public functions -----
 
@@ -143,9 +140,9 @@
 (defn wrap-load
   [input-channel output-channel]
   (go
-    (reset! loading? true)
+    (swap! app-state #(assoc % :loading? true))
     (>! output-channel (<! input-channel))
-    (reset! loading? false))
+    (swap! app-state #(assoc % :loading? false)))
   output-channel)
 
 (defn sparql-query
@@ -154,11 +151,11 @@
   (let [query-channel (http/get query-path {:channel (chan 1 (map :body))})
         sparql-results (sparql-results-channel)]
     (go
-      (reset! loading? true)
+      (swap! app-state #(assoc % :loading? true))
       (let [query (render-template (<! query-channel) :data data)]
         ;(.log js/console query)
         (>! sparql-results (<! (sparql-query-channel query))))
-      (reset! loading? false))
+      (swap! app-state #(assoc % :loading? false)))
     sparql-results))
 
 (defn sparql-autocomplete
