@@ -64,13 +64,14 @@
   [board]
   (let [{:keys [classes endpoint]} (get-in config [:data :sparql])
         limit (apply + (range (inc (:board-size config))))
-        data (:data @state/app-state)
-        offset (+ (case (:difficulty data)
+        {{class-selection :classes
+          :keys [difficulty]} :data} @state/app-state
+        offset (+ (case difficulty
                         :easy 0
                         :normal 3750
                         :hard 8750)
                   (rand-int 2500))
-        chosen-classes ((:classes data) classes)]
+        chosen-classes (class-selection classes)]
     (go (let [results (map model/despoilerify
                            (<! (model/sparql-query endpoint
                                                    "sparql/cs_dbpedia.mustache"
@@ -96,7 +97,6 @@
     (go (let [results (map transform-row
                            (<! (model/load-gdocs-items "1LbvPMqaKC9pq1PlKK9_WTmNHUBRCSv1JctAeMyLXlzs"
                                                        "od6")))]
-          ;(.log js/console (clj->js results))
           (reset! state/gdocs-items results)))))
 
 ;; -------------------------

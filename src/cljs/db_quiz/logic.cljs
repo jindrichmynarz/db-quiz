@@ -1,5 +1,6 @@
 (ns db-quiz.logic
-  (:require [db-quiz.state :as state]
+  (:require [db-quiz.state :refer [app-state]]
+            [db-quiz.config :refer [config]]
             [clojure.string :as string]
             [clojure.set :refer [intersection union]]
             [clj-fuzzy.jaro-winkler :refer [jaro-winkler]]))
@@ -64,22 +65,21 @@
   "Test if guess matches the exepcted answer using Jaro-Winkler's string distance.
   Fuzzy matching may be tweaked by setting threshold
   from 0 (everything matches) to 1 (only exact matches)."
-  [guess answer & {:keys [threshold]
-                   :or {threshold 0.94}}]
-  {:pre [(< 0 threshold 1)]}
+  [guess answer & {:keys [threshold]}]
+  {:pre [(or (not threshold) (< 0 threshold 1))]}
   (> (jaro-winkler (normalize-answer guess)
                    (normalize-answer answer))
-     threshold))
+     (or threshold (:guess-similarity-threshold config))))
 
 (defn clear-answer
   "Clear currently provided answer"
   [app-state]
-  (assoc app-state :answer ""))
+  (dissoc app-state :answer))
 
 (defn deselect-current-field
   "Currently selected field is cleared."
   [app-state]
-  (assoc app-state :current-field nil))
+  (dissoc app-state :current-field))
 
 (defn toggle
   "Toggle between 2 values given the current value"
@@ -95,35 +95,29 @@
 
 (defn turn
   []
-  (swap! state/app-state (comp toggle-player clear-answer deselect-current-field)))
+  (swap! app-state (comp toggle-player clear-answer deselect-current-field)))
 
 (defn pick-field
   "A player picks a field with id on board."
   [board id]
-  (let [on-turn (:on-turn @state/app-state)
+  (let [{:keys [current-field on-turn]} @app-state
         ownership (get-in @board [id :ownership])]
-    (when (= ownership :default)
+    (when (and (= ownership :default) (nil? current-field))
       (swap! board #(assoc-in % [id :ownership] :active))
-      (swap! state/app-state #(assoc % :current-field id)))))
+      (swap! app-state #(assoc % :current-field id)))))
 
 (defn answer-question
   ""
   [board id correct-answer]
-  (let [{:keys [answer on-turn]} @state/app-state
+  (let [{:keys [answer players on-turn]} @app-state
         new-ownership (if (answer-matches? answer correct-answer)
                           on-turn
                           :missed)]
     (swap! board #(assoc-in % [id :ownership] new-ownership))
     ; Test if the game is over:
-    (let [board-state @board
-          winner (find-winner board-state)]
-      (cond ; A player connected all sides of the triangle. 
-            (not (nil? winner)) 
-            (js/alert "Máme vítěze!")
-            ; No more fields in the default or missed ownership.
-            (not-any? #{:default :missed} (map :ownership (vals board-state)))
-            (js/alert "Nikdo nevyhrál!")
-            :else (turn)))))
+    (if-let [winner (find-winner @board)]
+      (.log js/console (str "Vítězem se stává " ((:player winner) players)))
+      (turn))))
 
 (defn skip-question
   "A player skips a question. Its field is marked as missed. Player on turn is switched."

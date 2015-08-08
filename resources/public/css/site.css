@@ -116,10 +116,10 @@ a:hover {
   stroke: #000;
 }
 
-.hexagon.default:hover .hex-inner {
+.hexagon.available:hover .hex-inner {
   fill: url(#hover-inner);
 }
-.hexagon.default:hover .hex-outer {
+.hexagon.available:hover .hex-outer {
   fill: url(#hover-outer);
 }
 
@@ -129,14 +129,11 @@ a:hover {
 .hexagon.active .hex-outer {
   fill: url(#active-outer);
 }
-.hexagon.default .hex-inner {
+.hexagon.available .hex-inner {
   cursor: pointer;
 }
-.hexagon.taken {
-  color: #fefefe;
-}
-.hexagon.taken text {
-  cursor: default !important;
+#hex-triangle .hexagon.unavailable text {
+  cursor: default; 
 }
 
 #hex-triangle text {
