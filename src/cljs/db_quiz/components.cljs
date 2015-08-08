@@ -2,7 +2,7 @@
   (:require [db-quiz.layout :refer [hex-triangle]]
             [db-quiz.logic :as logic]
             [db-quiz.model :as model] 
-            [db-quiz.state :as state]
+            [db-quiz.state :refer [app-state]]
             [reagent.core :as reagent]
             [reagent-forms.core :refer [bind-fields]]))
 
@@ -45,7 +45,7 @@
    [:div#logo [:img {:alt "DB quiz logo"
                      :src "/img/logo.svg"}]]
    [:div.col-sm-6.col-sm-offset-3
-    [bind-fields start-menu state/app-state]]])
+    [bind-fields start-menu app-state]]])
 
 ; ----- Play page -----
 
@@ -58,13 +58,13 @@
 
 (defn loading-indicator
   []
-  (when @model/loading?
+  (when (:loading? @app-state)
     [:div#loading
      [:div#loadhex]
      [:p.vcenter "Načítání..."]]))
 
 (def autocomplete
-  [:input#guess.form-control.ui-widget {:field :text :id :answer :type "text"}])
+  [:input#guess.form-control.ui-widget {:autoFocus "autoFocus" :field :text :id :answer :type "text"}])
 
 (defn autocomplete-component []
   (reagent/create-class {:reagent-render autocomplete
@@ -83,7 +83,7 @@
       [:div.row
         [:div.col-sm-12
         [:div.input-group
-          [bind-fields autocomplete state/app-state]
+          [bind-fields autocomplete app-state]
           [:div.input-group-btn {:role "group"}
             [:button.btn.btn-primary
               {:on-click (partial logic/answer-question board id label)
@@ -97,8 +97,9 @@
         [:p.col-sm-12 [:strong "Řešení: "] label]]]))
 
 (defn player-on-turn
+  "Show the name of the player, whose turn it currently is."
   []
-  (let [{:keys [on-turn players]} @state/app-state
+  (let [{:keys [on-turn players]} @app-state
         player-name (on-turn players)
         player-name-length (count player-name)
         font-class (cond (< player-name-length 6) "font-large"
@@ -117,7 +118,7 @@
    [loading-indicator]
    [:div.row
     [:div.col-sm-6 [hex-triangle board]]
-    (when-let [current-field (:current-field @state/app-state)]
+    (when-let [current-field (:current-field @app-state)]
       [question-box board current-field])]
    [:div.row
     [player-on-turn]]])
