@@ -1,7 +1,7 @@
 (ns db-quiz.layout
   (:require [db-quiz.config :refer [config]]
             [db-quiz.logic :as logic]
-            [db-quiz.state :as state]
+            [db-quiz.state :refer [app-state]]
             [clojure.string :as string]))
 
 (defn shade-colour
@@ -57,8 +57,13 @@
   (let [absolute-offset (* (/ size 100) (get-in config [:layout :inner-hex-offset]))
         [x y] center]
     (fn []
-      (let [ownership (name (get-in @board [id :ownership]))]
-        [:g {:class (string/join " " (conj ["hexagon"] (if (= ownership "default") "default" "taken")))
+      (let [ownership (name (get-in @board [id :ownership]))
+            {:keys [current-field loading?]} @app-state
+            disabled? (not (nil? current-field))
+            availability (if (or loading? disabled? (not (#{"default" "missed"} ownership)))
+                             "unavailable"
+                             "available")]
+        [:g {:class (str "hexagon " availability)
              :on-click (partial logic/pick-field board id)} 
          [:polygon.hex-outer {:fill (str "url(#" ownership "-outer)")
                               :points (hex-coords center size)}]
