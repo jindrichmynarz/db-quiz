@@ -72,7 +72,11 @@
   [description]
   (let [maximum-length 500]
     (cond (> (count description) maximum-length)
-          (str (trim (subs description 0 (- maximum-length 3))) "...")
+          (reduce (fn [a b]
+                    (if (> (count a) maximum-length)
+                        a
+                        (str a ". " b)))
+                  (split description #"\.\s+"))
           :else description)))
 
 (defn clear-label
