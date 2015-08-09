@@ -2,7 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [db-quiz.config :refer [config]]
             [db-quiz.model :as model]
-            [db-quiz.state :as state]
+            [db-quiz.state :refer [app-state]]
             [db-quiz.components :as components]
             [reagent.core :as reagent :refer [atom]]
             [reagent.session :as session]
@@ -47,25 +47,12 @@
                ; Get list of symbols of the boxes in the board.
                (map symbols-fn (range 1 (inc number-of-fields)))))))
 
-(defn load-items
-  [offset]
-  (let [{{:keys [default]} :classes
-        :keys [endpoint]} (get-in config [:data :sparql])
-        limit (apply + (range (inc (:board-size config))))]
-    (go (let [results (map model/despoilerify
-                           (<! (model/sparql-query endpoint
-                                                   "sparql/cs_dbpedia.mustache"
-                                                   :data {:classes default
-                                                          :limit limit
-                                                          :offset offset})))]
-          (reset! state/items results)))))
-
 (defn load-board-data
   [board]
   (let [{:keys [classes endpoint]} (get-in config [:data :sparql])
         limit (apply + (range (inc (:board-size config))))
         {{class-selection :classes
-          :keys [difficulty]} :data} @state/app-state
+          :keys [difficulty]} :data} @app-state
         offset (+ (case difficulty
                         :easy 0
                         :normal 3750
@@ -78,11 +65,12 @@
                                                    :data {:classes chosen-classes
                                                           :limit limit
                                                           :offset offset})))]
-          (swap! board
-                 (fn [board]
-                   (into {} (map (fn [[k v] result] [k (merge v result)])
-                                 board
-                                 results))))))))
+          (swap! app-state (fn [state]
+                             (assoc state
+                                    :board
+                                    (into {} (map (fn [[k v] result] [k (merge v result)])
+                                                  board
+                                                  results)))))))))
 
 (defn load-gdocs-items
   ; Testing data:
@@ -97,7 +85,7 @@
     (go (let [results (map transform-row
                            (<! (model/load-gdocs-items "1LbvPMqaKC9pq1PlKK9_WTmNHUBRCSv1JctAeMyLXlzs"
                                                        "od6")))]
-          (reset! state/gdocs-items results)))))
+          (swap! app-state #(assoc % :board results))))))
 
 ;; -------------------------
 ;; Views
@@ -105,10 +93,9 @@
 (secretary/set-config! :prefix "#")
 
 (defn play-page []
-  (let [board (atom (init-board :letters-board false))]
-    (load-board-data board)
-    (fn []
-      [components/play-page board])))
+  (load-board-data (init-board :letters-board false))
+  (fn []
+    [components/play-page]))
 
 (defn current-page []
   [:div [(session/get :current-page)]])

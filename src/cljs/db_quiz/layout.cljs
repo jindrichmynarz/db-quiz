@@ -53,18 +53,18 @@
 (defn hexagon
   "Generate hexagon of size containing text
   centered at center [x y]."
-  [board {:keys [center id size text]}]
+  [{:keys [center id size text]}]
   (let [absolute-offset (* (/ size 100) (get-in config [:layout :inner-hex-offset]))
         [x y] center]
     (fn []
-      (let [ownership (name (get-in @board [id :ownership]))
-            {:keys [current-field loading?]} @app-state
+      (let [{:keys [board current-field loading?]} @app-state
+            ownership (name (get-in board [id :ownership]))
             disabled? (not (nil? current-field))
             availability (if (or loading? disabled? (not (#{"default" "missed"} ownership)))
                              "unavailable"
                              "available")]
         [:g {:class (str "hexagon " availability)
-             :on-click (partial logic/pick-field board id)} 
+             :on-click (partial logic/pick-field id)} 
          [:polygon.hex-outer {:fill (str "url(#" ownership "-outer)")
                               :points (hex-coords center size)}]
          [:polygon.hex-inner {:fill (str "url(#" ownership "-inner)")
@@ -101,7 +101,7 @@
                             border-width ; Account for hexagon's border
                             (* (/ 3 2) r (dec y))
                             (when-not (= y 1) (* (dec y) y-space))))] ; Account for spaces
-    (fn [board]
+    (fn []
       [:svg#hex-triangle {:x 0
                           :y 0
                           :width grid-width
@@ -111,9 +111,9 @@
                       (:colours config))]
        (map (fn [[[x y] options]]
               ^{:key [x y]}
-              [hexagon board (assoc options
-                                    :center [(x-offset x y)
-                                             (y-offset y)]
-                                    :id [x y]
-                                    :size size)])
-            @board)])))
+              [hexagon (assoc options
+                              :center [(x-offset x y)
+                                       (y-offset y)]
+                              :id [x y]
+                              :size size)])
+          (:board @app-state))])))

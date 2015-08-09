@@ -129,7 +129,7 @@ a:hover {
 .hexagon.active .hex-outer {
   fill: url(#active-outer);
 }
-.hexagon.available .hex-inner {
+#hex-triangle .hexagon.available .hex-inner {
   cursor: pointer;
 }
 #hex-triangle .hexagon.unavailable text {
@@ -213,20 +213,47 @@ td {
 
 #on-turn {
   font-size: 2em;
-  padding: 1em 0;
+  padding: .66em 0;
   color: #fff;
+  text-align: center;
 }
 
-#on-turn.player-1 {
+#on-turn.player-1, #timeout .player-1 {
   background-color: #fc4349;
 }
 
-#on-turn.player-2 {
+#on-turn.player-2, #timeout .player-2 {
   background-color: #2c3e50;
 }
 
-#on-turn-label {
-  margin-top: 1em;
+#timeout, #timeout-shade {
+  height: 5px;
+}
+
+#timeout-shade {
+  background-color: #fff;
+  position: relative;
+  margin-top: -5px;
+  margin-left: 0%;
+  width: 100%;
+  /* Smoothing animation via CSS transition */
+  -moz-transition: all 1s; 
+  -webkit-transition: all 1s;  
+  -ms-transition: all 1s;  
+  -o-transition: all 1s;  
+  transition: all 1s;
+}
+
+#timeout.player-1 {
+  background-color: #fc4349; 
+  background-image: -webkit-linear-gradient(left, #fc4349, #2c3e50);
+  background-image:         linear-gradient(to right, #fc4349, #2c3e50);
+}
+
+#timeout.player-2 {
+  background-color: #2c3e50;
+  background-image: -webkit-linear-gradient(left, #2c3e50, #fc4349);
+  background-image:         linear-gradient(to right, #2c3e50, #fc4349);
 }
 
 #question-box {
@@ -235,4 +262,39 @@ td {
 
 #description {
   text-align: justify;
+}
+
+#winner .player-1 {
+  color: #fc4349; 
+}
+
+#winner .player-2 {
+  color: #2c3e50;
+}
+
+/* reagent-forms typeahead */
+
+.typeahead-list {
+  list-style-type: none;
+  padding: 5px;
+  margin-top: 3px;
+  border: solid 1px grey;
+  border-radius: 3px;
+  position: absolute;
+  z-index: 2;
+  background-color: white;
+  overflow-y: scroll;
+  max-height: 300px;
+  width: 445px;
+}
+
+.typeahead-item {
+  padding: 3px;
+}
+
+li.highlighted {
+  padding: 3px;
+  border: 1px solid grey;
+  background-color: grey;
+  color: white;
 }
