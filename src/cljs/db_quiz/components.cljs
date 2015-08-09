@@ -1,6 +1,6 @@
 (ns db-quiz.components
   (:require [db-quiz.layout :refer [hex-triangle]]
-            [db-quiz.logic :as logic]
+            [db-quiz.logic :refer [make-a-guess]]
             [db-quiz.model :as model] 
             [db-quiz.state :refer [app-state]]
             [reagent.core :as reagent]
@@ -49,13 +49,6 @@
 
 ; ----- Play page -----
 
-(defn autocomplete-did-mount []
-  (js/$ (fn []
-          (.autocomplete (js/$ "#guess") 
-                         (clj->js {:delay 1000
-                                   :minLength 3
-                                   :source model/wikipedia-autocomplete})))))
-
 (defn loading-indicator
   []
   (when (:loading? @app-state)
@@ -64,69 +57,90 @@
      [:p.vcenter "Načítání..."]]))
 
 (def autocomplete
-  [:input#guess.form-control.ui-widget {:autoFocus "autoFocus" :field :text :id :answer :type "text"}])
+  [:input#guess.form-control {:autoFocus "autoFocus"
+                              :field :text
+                              :id :answer
+                              :on-key-down (fn [e]
+                                             ; Submit a guess by pressing Enter
+                                             (when (= (.-keyCode e) 13)
+                                               (make-a-guess)))
+                              :placeholder "Odpověď"
+                              :type "text"}])
 
-(defn autocomplete-component []
-  (reagent/create-class {:reagent-render autocomplete
-                         :component-did-mount autocomplete-did-mount}))
+(defn timeout
+  [on-turn completion]
+  [:div.row
+   [:div#timeout {:class (name on-turn)}]
+   [:div#timeout-shade {:style {:margin-left (str completion "%")
+                                :width (str (- 100 completion) "%")}}]])
 
 (defn question-box
-  [board id]
-  (let [{:keys [abbreviation description label]} (@board id)]
-    [:div#question-box.col-sm-6
+  [id]
+  (let [board (:board @app-state)
+        {:keys [abbreviation description label]} (board id)]
+    [:div
       [:div.row
         [:div.col-sm-12
           [:h2 abbreviation]
           [:p#description description]]]
       [:div.row
-        [label-element "guess" "Odpověď"]]
-      [:div.row
         [:div.col-sm-12
-        [:div.input-group
-          [bind-fields autocomplete app-state]
-          [:div.input-group-btn {:role "group"}
-            [:button.btn.btn-primary
-              {:on-click (partial logic/answer-question board id label)
-               :title "Odpovědět"}
-              [:span.glyphicon.glyphicon-ok]]
-            [:button.btn.btn-danger
-              {:on-click (partial logic/skip-question board id)
-               :title "Nevim, dál!"}
-              [:span.glyphicon.glyphicon-forward]]]]]]
+          [:div.input-group
+            [bind-fields autocomplete app-state]
+            [:span.input-group-btn
+              [:button.btn.btn-primary
+                {:on-click make-a-guess
+                :title "Odpovědět"}
+                [:span.glyphicon.glyphicon-ok]
+                " Odpovědět"]
+              [:button.btn.btn-danger
+                {:on-click make-a-guess
+                :title "Nevim, dál!"}
+                [:span.glyphicon.glyphicon-forward]
+                " Dál"]]]]]
       [:div.row
         [:p.col-sm-12 [:strong "Řešení: "] label]]]))
 
 (defn player-on-turn
   "Show the name of the player, whose turn it currently is."
   []
-  (let [{:keys [on-turn players]} @app-state
+  (let [{{:keys [completion start]} :timer
+         :keys [on-turn players]} @app-state
         player-name (on-turn players)
         player-name-length (count player-name)
         font-class (cond (< player-name-length 6) "font-large"
                          (< player-name-length 10) "font-regular"
                          :else "font-small")]
-    [:div.col-sm-2.col-sm-offset-2
-     [:p#on-turn-label "Na tahu je:"]
-     [:p#on-turn {:class (str (name on-turn) " " font-class)}
-       (if (> player-name-length 20)
-         (str (subs player-name 0 17) "...")
-         player-name)]]))
+    [:div
+      [:div.row
+        [:div#on-turn {:class (str (name on-turn) " " font-class)}
+          (if (> player-name-length 20)
+            (str (subs player-name 0 17) "...")
+            player-name)]]
+      [timeout on-turn completion]]))
 
 (defn play-page
-  [board]
-  [:div.container-fluid
-   [loading-indicator]
-   [:div.row
-    [:div.col-sm-6 [hex-triangle board]]
-    (when-let [current-field (:current-field @app-state)]
-      [question-box board current-field])]
-   [:div.row
-    [player-on-turn]]])
+  []
+  (let [{:keys [current-field]} @app-state]
+    [:div.container-fluid
+    [loading-indicator]
+    [:div.row
+      [:div.col-sm-6 [hex-triangle]]
+      [:div#question-box.col-sm-6
+        [player-on-turn]
+        (when current-field 
+          [question-box current-field])]]]))
 
 ; ----- End page -----
 
-(defn end-page []
-  [:div
-    [:h2 "Všechno jednou končí..."]
-    [:p "Hamižnost opět zvítězila nad pravdomluvností."]
-    [:a.button {:href "/"} [:span "Hrát znovu"]]])
+(defn end-page
+  []
+  (let [{{:keys [player] :as winner} :winner
+         :keys [players]} @app-state
+        winner-name (players player)]
+    [:div
+     (when winner
+       [:div#winner
+        [:p "Vítězem se stává"]
+        [:h1 {:class (name player)} winner-name]])
+     [:a.button {:href "/"} [:span "Hrát znovu"]]]))

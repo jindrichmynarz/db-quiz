@@ -13,6 +13,7 @@
                    :classes {:default ["http://dbpedia.org/ontology/Person"
                                        "http://dbpedia.org/ontology/Place"
                                        "http://dbpedia.org/ontology/Work"]}}}
+   :guess-similarity-threshold 0.94
    :layout {; Width of hexagon's border (in pixels)
             :border-width 1
             ; Radius of 1 hexagon composing the triangle (in pixels)
@@ -25,4 +26,5 @@
             :space 8}
    :letters ["A" "B" "C" "Č" "D" "E" "F" "G" "H" "Ch" "I" "J" "K" "L"
              "M" "N" "O" "P" "R" "Ř" "S" "Š" "T" "U" "V" "W" "Z" "Ž"]
-   :guess-similarity-threshold 0.94})
+   ; Available time for making a guess (in seconds)
+   :time-to-guess 30})

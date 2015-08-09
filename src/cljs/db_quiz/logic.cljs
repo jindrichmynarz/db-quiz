@@ -5,14 +5,25 @@
             [clojure.set :refer [intersection union]]
             [clj-fuzzy.jaro-winkler :refer [jaro-winkler]]))
 
+; ----- Private functions -----
+
+(defn- change-ownership
+  [ownership field-id app-state]
+  (assoc-in app-state [:board field-id :ownership] ownership))
+
+(def ^:private make-active
+  (partial change-ownership :active))
+
+; ----- Public functions -----
+
 (defn find-connecting-path
   "Finds if there is a continuous path connecting 3 sides of the boards
   through the player-fields starting from the field at coords."
   [player-fields [coords {:keys [neighbours sides]}]]
   {:pre [(map? player-fields)
-          (vector? coords)
-          (set? neighbours)
-          (set? sides)]}
+         (vector? coords)
+         (set? neighbours)
+         (set? sides)]}
   (let [player-fields-set (set (keys player-fields))]
     (loop [path #{coords}
             visited-sides sides
@@ -67,9 +78,10 @@
   from 0 (everything matches) to 1 (only exact matches)."
   [guess answer & {:keys [threshold]}]
   {:pre [(or (not threshold) (< 0 threshold 1))]}
-  (> (jaro-winkler (normalize-answer guess)
-                   (normalize-answer answer))
-     (or threshold (:guess-similarity-threshold config))))
+  (when guess
+    (> (jaro-winkler (normalize-answer guess)
+                     (normalize-answer answer))
+       (or threshold (:guess-similarity-threshold config)))))
 
 (defn clear-answer
   "Clear currently provided answer"
@@ -80,6 +92,11 @@
   "Currently selected field is cleared."
   [app-state]
   (dissoc app-state :current-field))
+
+(defn restart-timer
+  [app-state]
+  (assoc app-state :timer {:completion 0
+                           :start (.getTime (js/Date.))}))
 
 (defn toggle
   "Toggle between 2 values given the current value"
@@ -95,32 +112,42 @@
 
 (defn turn
   []
-  (swap! app-state (comp toggle-player clear-answer deselect-current-field)))
+  (swap! app-state (comp toggle-player clear-answer deselect-current-field restart-timer)))
 
-(defn pick-field
-  "A player picks a field with id on board."
-  [board id]
-  (let [{:keys [current-field on-turn]} @app-state
-        ownership (get-in @board [id :ownership])]
-    (when (and (= ownership :default) (nil? current-field))
-      (swap! board #(assoc-in % [id :ownership] :active))
-      (swap! app-state #(assoc % :current-field id)))))
-
-(defn answer-question
-  ""
-  [board id correct-answer]
-  (let [{:keys [answer players on-turn]} @app-state
+(defn make-a-guess
+  []
+  (let [{:keys [answer board current-field on-turn]} @app-state
+        correct-answer (get-in board [current-field :label])
         new-ownership (if (answer-matches? answer correct-answer)
                           on-turn
                           :missed)]
-    (swap! board #(assoc-in % [id :ownership] new-ownership))
     ; Test if the game is over:
-    (if-let [winner (find-winner @board)]
-      (.log js/console (str "Vítězem se stává " ((:player winner) players)))
+    (if-let [winner (find-winner (:board (swap! app-state
+                                                (partial change-ownership new-ownership current-field))))]
+      (do (swap! app-state #(assoc % :winner winner))
+          (set! (.-location js/window) "/#end"))
       (turn))))
 
-(defn skip-question
-  "A player skips a question. Its field is marked as missed. Player on turn is switched."
-  [board id]
-  (swap! board #(assoc-in % [id :ownership] :missed))
-  (turn))
+(defn pick-field
+  "A player picks a field with id on board."
+  [id]
+  (let [{:keys [board current-field loading? on-turn]} @app-state
+        ownership (get-in board [id :ownership])]
+    (when (and (= ownership :default) (nil? current-field) (not loading?))
+      (swap! app-state (comp (partial make-active id)
+                             restart-timer
+                             (fn [app-state] (assoc app-state :current-field id)))))))
+
+(defonce timeout-updater
+  (js/setInterval (fn []
+                    (let [{{:keys [completion start]} :timer
+                           :keys [current-field]} @app-state
+                          time-to-guess (:time-to-guess config)]
+                      (when current-field
+                        (if (< completion 100)
+                          (swap! app-state #(assoc-in %
+                                                      [:timer :completion]
+                                                      (/ (- (.getTime (js/Date.)) start)
+                                                         (* 10 time-to-guess))))
+                          (make-a-guess)))))
+                  1000))
