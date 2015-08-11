@@ -1,6 +1,8 @@
 (ns db-quiz.logic
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [db-quiz.state :refer [app-state]]
             [db-quiz.config :refer [config]]
+            [cljs.core.async :refer [timeout]]
             [clojure.string :as string]
             [clojure.set :refer [intersection union]]
             [clj-fuzzy.jaro-winkler :refer [jaro-winkler]]))
@@ -78,10 +80,11 @@
   from 0 (everything matches) to 1 (only exact matches)."
   [guess answer & {:keys [threshold]}]
   {:pre [(or (not threshold) (< 0 threshold 1))]}
-  (when guess
+  (if guess
     (> (jaro-winkler (normalize-answer guess)
                      (normalize-answer answer))
-       (or threshold (:guess-similarity-threshold config)))))
+       (or threshold (:guess-similarity-threshold config)))
+    false))
 
 (defn clear-answer
   "Clear currently provided answer"
@@ -93,10 +96,19 @@
   [app-state]
   (dissoc app-state :current-field))
 
+(defn match-answer
+  "Mark if the last question was correctly answered or not." 
+  [matches? app-state]
+  (assoc app-state :verdict matches?))
+
 (defn restart-timer
   [app-state]
   (assoc app-state :timer {:completion 0
                            :start (.getTime (js/Date.))}))
+
+(def unmatch-answer
+  "Clear the answer match status."
+  (partial match-answer nil))
 
 (defn toggle
   "Toggle between 2 values given the current value"
@@ -111,22 +123,27 @@
   (update app-state :on-turn (partial toggle [:player-1 :player-2])))
 
 (defn turn
-  []
-  (swap! app-state (comp toggle-player clear-answer deselect-current-field restart-timer)))
+  [& {:keys [answer answer-matched? correct-answer]}]
+  (let [mark-fn (partial match-answer answer-matched?)]
+    (go (swap! app-state mark-fn)
+        (<! (timeout 5000))
+        (swap! app-state (comp restart-timer toggle-player clear-answer
+                               deselect-current-field unmatch-answer))))) 
 
 (defn make-a-guess
   []
   (let [{:keys [answer board current-field on-turn]} @app-state
         correct-answer (get-in board [current-field :label])
-        new-ownership (if (answer-matches? answer correct-answer)
-                          on-turn
-                          :missed)]
+        answer-matched? (answer-matches? answer correct-answer)
+        new-ownership (if answer-matched? on-turn :missed)]
     ; Test if the game is over:
     (if-let [winner (find-winner (:board (swap! app-state
                                                 (partial change-ownership new-ownership current-field))))]
       (do (swap! app-state #(assoc % :winner winner))
           (set! (.-location js/window) "/#end"))
-      (turn))))
+      (turn :answer answer
+            :answer-matched? answer-matched?
+            :correct-answer correct-answer))))
 
 (defn pick-field
   "A player picks a field with id on board."
@@ -141,9 +158,9 @@
 (defonce timeout-updater
   (js/setInterval (fn []
                     (let [{{:keys [completion start]} :timer
-                           :keys [current-field]} @app-state
+                           :keys [current-field verdict]} @app-state
                           time-to-guess (:time-to-guess config)]
-                      (when current-field
+                      (when (and current-field (nil? verdict))
                         (if (< completion 100)
                           (swap! app-state #(assoc-in %
                                                       [:timer :completion]

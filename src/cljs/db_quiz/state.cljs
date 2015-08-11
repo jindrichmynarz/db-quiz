@@ -12,4 +12,5 @@
                                 :player-2 "Paní M."}
                       :timer {:completion 0
                               :start 0}
+                      :verdict nil
                       :winner nil}))

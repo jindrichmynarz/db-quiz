@@ -56,16 +56,28 @@
      [:div#loadhex]
      [:p.vcenter "Načítání..."]]))
 
+(defn friend-source [text]
+  (filter
+   #(-> % (.toLowerCase %) (.indexOf text) (> -1))
+   ["Alice" "Alan" "Bob" "Beth" "Jim" "Jane" "Kim" "Rob" "Zoe"]))
+
 (def autocomplete
-  [:input#guess.form-control {:autoFocus "autoFocus"
-                              :field :text
-                              :id :answer
-                              :on-key-down (fn [e]
-                                             ; Submit a guess by pressing Enter
-                                             (when (= (.-keyCode e) 13)
-                                               (make-a-guess)))
-                              :placeholder "Odpověď"
-                              :type "text"}])
+  ;[:div {:field           :typeahead
+  ;       :id              :answer
+  ;       :data-source     friend-source
+  ;       :input-class     "form-control"
+  ;       :list-class      "typeahead-list"
+  ;       :item-class      "typeahead-item"
+  ;       :highlight-class "highlighted"}])
+  [:input.form-control {:autoFocus "autoFocus"
+                        :field :text
+                        :id :answer
+                        :on-key-down (fn [e]
+                                       ; Submit a guess by pressing Enter
+                                       (when (= (.-keyCode e) 13)
+                                         (make-a-guess)))
+                        :placeholder "Odpověď"
+                        :type "text"}])
 
 (defn timeout
   [on-turn completion]
@@ -74,9 +86,28 @@
    [:div#timeout-shade {:style {:margin-left (str completion "%")
                                 :width (str (- 100 completion) "%")}}]])
 
+(defn verdict-component
+  []
+  (let [{:keys [board current-field verdict]} @app-state
+        correct-answer (get-in board [current-field :label]) 
+        {:keys [glyphicon-class
+                success
+                verdict-class]} (if verdict
+                                  {:glyphicon-class "glyphicon-ok"
+                                   :success "Ano"
+                                   :verdict-class "alert-success"}
+                                  {:glyphicon-class "glyphicon-remove"
+                                   :success "Ne"
+                                   :verdict-class "alert-danger"})]
+    [:div.row {:class (when (nil? verdict) "hidden")}
+      [:div.col-sm-12
+        [:p#verdict {:class (str "alert " verdict-class)}
+          [:span {:class (str "glyphicon " glyphicon-class)}]
+          success ". Správná odpověď je " [:strong correct-answer] "."]]]))
+
 (defn question-box
   [id]
-  (let [board (:board @app-state)
+  (let [{:keys [board]} @app-state
         {:keys [abbreviation description label]} (board id)]
     [:div
       [:div.row
@@ -88,16 +119,17 @@
           [:div.input-group
             [bind-fields autocomplete app-state]
             [:span.input-group-btn
-              [:button.btn.btn-primary
-                {:on-click make-a-guess
-                :title "Odpovědět"}
-                [:span.glyphicon.glyphicon-ok]
-                " Odpovědět"]
-              [:button.btn.btn-danger
-                {:on-click make-a-guess
-                :title "Nevim, dál!"}
-                [:span.glyphicon.glyphicon-forward]
-                " Dál"]]]]]
+             [:button.btn.btn-primary
+              {:on-click make-a-guess
+               :title "Odpovědět"}
+              [:span.glyphicon.glyphicon-ok]
+              " Odpovědět"]
+             [:button.btn.btn-danger
+              {:on-click make-a-guess
+               :title "Nevim, dál!"}
+              [:span.glyphicon.glyphicon-forward]
+              " Dál"]]]]]
+      [verdict-component]
       [:div.row
         [:p.col-sm-12 [:strong "Řešení: "] label]]]))
 
