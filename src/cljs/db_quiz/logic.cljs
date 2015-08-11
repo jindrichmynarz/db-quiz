@@ -132,25 +132,26 @@
 
 (defn make-a-guess
   []
-  (let [{:keys [answer board current-field on-turn]} @app-state
+  (let [{:keys [answer board current-field on-turn verdict]} @app-state
         correct-answer (get-in board [current-field :label])
         answer-matched? (answer-matches? answer correct-answer)
         new-ownership (if answer-matched? on-turn :missed)]
-    ; Test if the game is over:
-    (if-let [winner (find-winner (:board (swap! app-state
-                                                (partial change-ownership new-ownership current-field))))]
-      (do (swap! app-state #(assoc % :winner winner))
-          (set! (.-location js/window) "/#end"))
-      (turn :answer answer
-            :answer-matched? answer-matched?
-            :correct-answer correct-answer))))
+    (when (nil? verdict)
+      ; Test if the game is over:
+      (if-let [winner (find-winner (:board (swap! app-state
+                                                  (partial change-ownership new-ownership current-field))))]
+        (do (swap! app-state #(assoc % :winner winner))
+            (set! (.-location js/window) "/#end"))
+        (turn :answer answer
+              :answer-matched? answer-matched?
+              :correct-answer correct-answer)))))
 
 (defn pick-field
   "A player picks a field with id on board."
   [id]
-  (let [{:keys [board current-field loading? on-turn]} @app-state
+  (let [{:keys [board current-field loading? on-turn verdict]} @app-state
         ownership (get-in board [id :ownership])]
-    (when (and (= ownership :default) (nil? current-field) (not loading?))
+    (when (and (= ownership :default) (nil? current-field) (not loading?) (nil? verdict))
       (swap! app-state (comp (partial make-active id)
                              restart-timer
                              (fn [app-state] (assoc app-state :current-field id)))))))
