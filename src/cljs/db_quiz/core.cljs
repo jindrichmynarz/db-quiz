@@ -58,19 +58,19 @@
                         :normal 3750
                         :hard 8750)
                   (rand-int 2500))
-        chosen-classes (class-selection classes)]
-    (go (let [results (map model/despoilerify
-                           (<! (model/sparql-query endpoint
-                                                   "sparql/cs_dbpedia.mustache"
-                                                   :data {:classes chosen-classes
-                                                          :limit limit
-                                                          :offset offset})))]
-          (swap! app-state (fn [state]
-                             (assoc state
-                                    :board
-                                    (into {} (map (fn [[k v] result] [k (merge v result)])
-                                                  board
-                                                  results)))))))))
+        chosen-classes (class-selection classes)
+        query-channel (model/sparql-query endpoint
+                                          "sparql/cs_dbpedia.mustache"
+                                          :data {:classes chosen-classes
+                                                 :limit limit
+                                                 :offset offset})
+        merge-board-with-data (fn [board data]
+                                (into {}
+                                      (map (fn [[k v] result] [k (merge v result)])
+                                           board
+                                           data)))]
+    (go (let [results (map model/despoilerify (<! query-channel))]
+          (swap! app-state #(assoc % :board (merge-board-with-data board results)))))))
 
 (defn load-gdocs-items
   ; Testing data:
