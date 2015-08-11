@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [db-quiz.state :refer [app-state]]
             [db-quiz.config :refer [config]]
+            [db-quiz.normalize :refer [replace-diacritics]]
             [cljs.core.async :refer [timeout]]
             [clojure.string :as string]
             [clojure.set :refer [intersection union]]
@@ -68,7 +69,9 @@
 
 (defn normalize-answer
   [answer]
-  (string/lower-case answer))
+  (-> answer
+      replace-diacritics
+      string/lower-case))
 
 (defn answer-matches?
   "Test if guess matches the exepcted answer using Jaro-Winkler's string distance.
@@ -130,7 +133,7 @@
   [& {:keys [answer answer-matched? correct-answer]}]
   (let [mark-fn (partial match-answer answer-matched?)]
     (go (swap! app-state mark-fn)
-        (<! (timeout 5000))
+        (<! (timeout 3000))
         (swap! app-state (comp restart-timer toggle-player clear-answer
                                deselect-current-field unmatch-answer))))) 
 
