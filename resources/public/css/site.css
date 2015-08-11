@@ -47,6 +47,10 @@ a:hover {
   transform: translateY(-50%);
 }
 
+.transparent {
+  opacity: 0;
+}
+
 #start-menu {
   margin-top: 1em;
 }
@@ -264,6 +268,14 @@ td {
   text-align: justify;
 }
 
+#verdict {
+  transition: opacity .3s ease .15s;
+}
+
+#verdict .glyphicon {
+  margin-right: 4px;
+}
+
 #winner .player-1 {
   color: #fc4349; 
 }
@@ -285,7 +297,8 @@ td {
   background-color: white;
   overflow-y: scroll;
   max-height: 300px;
-  width: 445px;
+  width: 100%;
+  /* width: 445px; */
 }
 
 .typeahead-item {

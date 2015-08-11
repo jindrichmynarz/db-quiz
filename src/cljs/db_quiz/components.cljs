@@ -99,9 +99,9 @@
                                   {:glyphicon-class "glyphicon-remove"
                                    :success "Ne"
                                    :verdict-class "alert-danger"})]
-    [:div.row {:class (when (nil? verdict) "hidden")}
+    [:div#verdict.row {:class (when (nil? verdict) "transparent")}
       [:div.col-sm-12
-        [:p#verdict {:class (str "alert " verdict-class)}
+        [:p {:class (str "alert " verdict-class)}
           [:span {:class (str "glyphicon " glyphicon-class)}]
           success ". Správná odpověď je " [:strong correct-answer] "."]]]))
 
