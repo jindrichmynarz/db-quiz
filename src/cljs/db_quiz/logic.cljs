@@ -7,16 +7,12 @@
             [clojure.set :refer [intersection union]]
             [clj-fuzzy.jaro-winkler :refer [jaro-winkler]]))
 
-; ----- Private functions -----
-
-(defn- change-ownership
+(defn change-ownership
   [ownership field-id app-state]
   (assoc-in app-state [:board field-id :ownership] ownership))
 
-(def ^:private make-active
+(def make-active
   (partial change-ownership :active))
-
-; ----- Public functions -----
 
 (defn find-connecting-path
   "Finds if there is a continuous path connecting 3 sides of the boards
@@ -122,6 +118,14 @@
   [app-state]
   (update app-state :on-turn (partial toggle [:player-1 :player-2])))
 
+(defn test-winner
+  [owner current-field]
+  (let [state (swap! app-state (partial change-ownership owner current-field))
+        winner (find-winner (:board state))]
+    (when winner
+      (do (swap! app-state #(assoc % :winner winner))
+          (set! (.-location js/window) "/#end")))))
+
 (defn turn
   [& {:keys [answer answer-matched? correct-answer]}]
   (let [mark-fn (partial match-answer answer-matched?)]
@@ -138,23 +142,24 @@
         new-ownership (if answer-matched? on-turn :missed)]
     (when (nil? verdict)
       ; Test if the game is over:
-      (if-let [winner (find-winner (:board (swap! app-state
-                                                  (partial change-ownership new-ownership current-field))))]
-        (do (swap! app-state #(assoc % :winner winner))
-            (set! (.-location js/window) "/#end"))
-        (turn :answer answer
-              :answer-matched? answer-matched?
-              :correct-answer correct-answer)))))
+      (test-winner new-ownership current-field)
+      (turn :answer answer
+            :answer-matched? answer-matched?
+            :correct-answer correct-answer))))
 
 (defn pick-field
   "A player picks a field with id on board."
   [id]
   (let [{:keys [board current-field loading? on-turn verdict]} @app-state
         ownership (get-in board [id :ownership])]
-    (when (and (= ownership :default) (nil? current-field) (not loading?) (nil? verdict))
-      (swap! app-state (comp (partial make-active id)
-                             restart-timer
-                             (fn [app-state] (assoc app-state :current-field id)))))))
+    (when (and (nil? current-field) (not loading?) (nil? verdict))
+          (case ownership
+                :default (swap! app-state (comp (partial make-active id)
+                                                restart-timer
+                                                (fn [app-state] (assoc app-state :current-field id))))
+                :missed (do (test-winner on-turn id)
+                            (swap! app-state (comp toggle-player 
+                                                   deselect-current-field)))))))
 
 (defonce timeout-updater
   (js/setInterval (fn []
