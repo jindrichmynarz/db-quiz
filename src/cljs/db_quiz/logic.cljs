@@ -3,10 +3,44 @@
   (:require [db-quiz.state :refer [app-state]]
             [db-quiz.config :refer [config]]
             [db-quiz.normalize :refer [replace-diacritics]]
-            [cljs.core.async :refer [timeout]]
+            [db-quiz.util :refer [listen number-of-fields redirect toggle]]
+            [cljs.core.async :refer [alts! close! chan put! timeout]]
             [clojure.string :as string]
             [clojure.set :refer [intersection union]]
             [clj-fuzzy.jaro-winkler :refer [jaro-winkler]]))
+
+(def ^:private verdict-display-time
+  "Time to display the correct answer (in milliseconds)"
+  (* (:verdict-display-time config) 1000))
+
+(defn init-board
+  "Initialize a data structure representing the game board."
+  []
+  (let [labels (get-in @app-state [:options :labels])
+        size (:board-size config)
+        get-sides (fn [x y] (set (remove nil? (list (when (= x 1) :a)
+                                                    (when (= x y) :b)
+                                                    (when (= y size) :c)))))
+        get-neighbours (fn [x y] (set (filter (fn [[x y]] (and ; Conditions for neighbours
+                                                               (<= x y)
+                                                               (<= 1 x size)
+                                                               (<= 1 y size)))
+                                              (map (fn [[ox oy]] [(+ x ox) (+ y oy)])
+                                                   ; Possible offset of neighbours
+                                                   [[-1 -1] [0 -1] [1 0] [0 1] [1 1] [-1 0]]))))
+        side (range (inc size))
+        symbols-fn (if (and (= labels :alphabetic) (= (count (:letters config)) number-of-fields))
+                     (fn [i] (nth (:letters config) (dec i)))
+                     identity)]
+    (into {}
+          (map (fn [[k v] text] [k (assoc v :text text)])
+               (mapcat (fn [y] (map (fn [x] [[x y] {:neighbours (get-neighbours x y)
+                                                    :ownership :default
+                                                    :sides (get-sides x y)}])
+                                    (range 1 (inc y))))
+                       side)
+               ; Get list of symbols of the boxes in the board.
+               (map symbols-fn (range 1 (inc number-of-fields)))))))
 
 (defn change-ownership
   [ownership field-id app-state]
@@ -68,10 +102,12 @@
     (some has-sides-connected? (filter has-all-sides? players-fields))))
 
 (defn normalize-answer
+  "Normalize answer to enable non-exact matching."
   [answer]
   (-> answer
       replace-diacritics
-      string/lower-case))
+      string/lower-case
+      string/trim))
 
 (defn answer-matches?
   "Test if guess matches the exepcted answer using Jaro-Winkler's string distance.
@@ -109,13 +145,6 @@
   "Clear the answer match status."
   (partial match-answer nil))
 
-(defn toggle
-  "Toggle between 2 values given the current value"
-  [[one two] value]
-  (if (= one value)
-    two
-    one))
-
 (defn toggle-player
   "Toggling between players"
   [app-state]
@@ -124,16 +153,21 @@
 (defn test-winner
   [owner current-field]
   (let [state (swap! app-state (partial change-ownership owner current-field))
-        winner (find-winner (:board state))]
+        winner (find-winner (:board state))
+        mark-fn (partial match-answer true)]
     (when winner
-      (do (swap! app-state #(assoc % :winner winner))
-          (set! (.-location js/window) "/#end")))))
+      (go (swap! app-state (comp mark-fn #(assoc % :winner winner)))
+          (<! (timeout verdict-display-time))
+          (swap! app-state (comp clear-answer deselect-current-field unmatch-answer))
+          (redirect "#end")))))
 
 (defn turn
   [& {:keys [answer answer-matched? correct-answer]}]
-  (let [mark-fn (partial match-answer answer-matched?)]
+  (let [mark-fn (partial match-answer answer-matched?)
+        keypresses (listen js/window.document "keydown")]
     (go (swap! app-state mark-fn)
-        (<! (timeout 3000))
+        (alts! [keypresses (timeout verdict-display-time)])
+        (close! keypresses)
         (swap! app-state (comp restart-timer toggle-player clear-answer
                                deselect-current-field unmatch-answer))))) 
 
@@ -162,7 +196,8 @@
                                                 (fn [app-state] (assoc app-state :current-field id))))
                 :missed (do (test-winner on-turn id)
                             (swap! app-state (comp toggle-player 
-                                                   deselect-current-field)))))))
+                                                   deselect-current-field)))
+                nil))))
 
 (defonce timeout-updater
   (js/setInterval (fn []
