@@ -24,7 +24,8 @@
                  [clj-tagsoup/clj-tagsoup "0.3.0" :exclusions [org.clojure/clojure]]
                  [cljs-http "0.1.35"]
                  [secretary "1.2.3"]
-                 [clj-fuzzy "0.3.1"]]
+                 [clj-fuzzy "0.3.1"]
+                 [org.clojars.frozenlock/reagent-modals "0.2.3"]]
 
   :plugins [[lein-environ "1.0.0"]
             [lein-asset-minifier "0.2.2"]]
@@ -85,7 +86,7 @@
                                                          :source-map true}}
                                         :test {:source-paths ["src/cljs"  "test/cljs"]
                                                :compiler {:output-to "target/test.js"
-                                                          :main 'db-quiz.runner
+                                                          :main db-quiz.runner
                                                           :optimizations :whitespace
                                                           :pretty-print true}}}}}
 
