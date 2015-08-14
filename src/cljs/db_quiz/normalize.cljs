@@ -1,9 +1,9 @@
 (ns db-quiz.normalize
-  "Clojurescript version of <http://stackoverflow.com/a/18391901/385505>"
   (:refer-clojure :exclude [replace])
   (:require [clojure.string :refer [replace]]))
 
-(def ^:private default-diacritics-removalap
+(def ^:private default-diacritics-removal-map
+  "Clojurescript version of <http://stackoverflow.com/a/18391901/385505>"
   [
    {:base "A"
     :letters "\u0041\u24B6\uFF21\u00C0\u00C1\u00C2\u1EA6\u1EA4\u1EAA\u1EA8\u00C3\u0100\u0102\u1EB0\u1EAE\u1EB4\u1EB2\u0226\u01E0\u00C4\u01DE\u1EA2\u00C5\u01FA\u01CD\u0200\u0202\u1EA0\u1EAC\u1EB6\u1E00\u0104\u023A\u2C6F"}
@@ -180,12 +180,13 @@
   ])
 
 (def diacritics-map
-  (into {} (apply concat
-                  (map (fn [{:keys [base letters]}]
-                         (map #(vector % base) letters))
-                       default-diacritics-removalap))))
+  (->> default-diacritics-removal-map
+       (map (fn [{:keys [base letters]}] (map #(vector % base) letters)))
+       (apply concat)
+       (into {})))
 
 (defn replace-diacritics
+  "Replace diacritical characters in s with their ASCII analogues."
   [s]
   (replace s
            #"[^\u0000-\u007E]"
