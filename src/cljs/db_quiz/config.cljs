@@ -9,10 +9,8 @@
              :missed "#333333"
              :player-1 "#fc4349"
              :player-2 "#2c3e50"}
-   :data {:sparql {:endpoint "http://cs.dbpedia.org/sparql"
-                   :classes {:default ["http://dbpedia.org/ontology/Person"
-                                       "http://dbpedia.org/ontology/Place"
-                                       "http://dbpedia.org/ontology/Work"]}}}
+   :data {:sparql {; Maximum number of results per query
+                   :page-size 5000}}
    :guess-similarity-threshold 0.94
    :layout {; Width of hexagon's border (in pixels)
             :border-width 1
@@ -26,5 +24,9 @@
             :space 8}
    :letters ["A" "B" "C" "Č" "D" "E" "F" "G" "H" "Ch" "I" "J" "K" "L"
              "M" "N" "O" "P" "R" "Ř" "S" "Š" "T" "U" "V" "W" "Z" "Ž"]
+   ; Maximum number of characters in a question
+   :max-question-length 500
    ; Available time for making a guess (in seconds)
-   :time-to-guess 30})
+   :time-to-guess 60
+   ; Time to display the correct answer (in seconds)
+   :verdict-display-time 5})
