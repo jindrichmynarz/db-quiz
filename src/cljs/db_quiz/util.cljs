@@ -18,6 +18,11 @@
                    (fn [event] (put! out event)))
     out))
 
+(defn now
+  "Returns current time in seconds"
+  []
+  (/ (.getTime (js/Date.)) 1000))
+
 (def number-of-fields
   (apply + (range (inc (:board-size config)))))
 
