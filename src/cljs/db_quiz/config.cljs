@@ -8,7 +8,8 @@
              :hover "#dedede"
              :missed "#333333"
              :player-1 "#fc4349"
-             :player-2 "#2c3e50"}
+             :player-2 "#354d65" ;"#2c3e50"
+             }
    :data {:sparql {; Maximum number of results per query
                    :page-size 5000}}
    :guess-similarity-threshold 0.94
@@ -27,6 +28,6 @@
    ; Maximum number of characters in a question
    :max-question-length 500
    ; Available time for making a guess (in seconds)
-   :time-to-guess 60
+   :time-to-guess 45
    ; Time to display the correct answer (in seconds)
    :verdict-display-time 5})
