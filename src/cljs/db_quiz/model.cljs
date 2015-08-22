@@ -277,10 +277,10 @@
     (if spreadsheet-id
       (do (go (let [results (<! raw-results-chan)
                     results-count (count results)]
-                (cond (not= results-count number-of-fields)
+                (cond (< results-count number-of-fields)
                         (reagent-modals/modal! (modals/invalid-spreadsheet-rows results-count))
                       ; TODO: More validation rules
-                      :else (>! results-chan results))))
+                      :else (>! results-chan (take number-of-fields (shuffle results))))))
           results-chan)
       (reagent-modals/modal! (modals/invalid-google-spreadsheet-url spreadsheet-url)))))
 

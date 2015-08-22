@@ -31,7 +31,7 @@
 (def google-spreadsheet-help
   [:div 
    [:h2 "Jak má tabulka vypadat?"]
-   [:p "Tabulka musí mít 2 sloupce, záhlaví a 28 řádků. Název prvního sloupce je 'Label', druhý sloupec je pojmenován 'Description'. V prvním sloupci jsou názvy hádaných věcí, zatímco v druhém sloupci je otázka popisující hádanou věc. Otázek musí být celkem 28, protože tolik je políček na hrací ploše."]
+   [:p "Tabulka musí mít 2 sloupce, záhlaví a alespoň tolik řádků, kolik je hracích políček. Název prvního sloupce je 'Label', druhý sloupec je pojmenován 'Description'. V prvním sloupci jsou názvy hádaných věcí, zatímco v druhém sloupci je otázka popisující hádanou věc."]
    ; TODO: Provide a link to sample spreadsheet template.
    [:h2 "Jak tabulku publikovat?"]
    [:p "Zvolte 'File' \u2192 'Publish to the web...' \u2192 'Publish'."]])
@@ -43,5 +43,5 @@
 (defn invalid-spreadsheet-rows
   [actual]
   {:pre [(pos-number? actual)]}
-  [:div "Nesprávný počet řádků v tabulce. Očekávaný počet je "
-        number-of-fields ", ale skutečný je " actual "."])
+  [:div "Nesprávný počet řádků v tabulce. Je třeba alespoň "
+        number-of-fields "řádků, ale tabulka má jen " actual " řádků."])
