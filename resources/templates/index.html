@@ -31,6 +31,18 @@
     <meta name="theme-color" content="#ffffff">
   </head>
   <body>
+    <svg height="0" width="0" xmlns="http://www.w3.org/2000/svg">
+      <filter id="drop-shadow">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2.2"/>
+        <feOffset dx="1" dy="3" result="offsetblur"/>
+        <feFlood flood-color="rgba(0,0,0,0.3)"/>
+        <feComposite in2="offsetblur" operator="in"/>
+        <feMerge>
+          <feMergeNode/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </svg>
     <div id="app"></div>
     <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
