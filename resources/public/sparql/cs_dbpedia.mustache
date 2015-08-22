@@ -48,7 +48,9 @@ WHERE {
             &&
             langMatches(lang(?_label), "cs")
             &&
-            langMatches(lang(?_description), "cs"))
+            langMatches(lang(?_description), "cs")
+            &&
+            (STRLEN(?_label) < 40)) {{! Eliminate too long labels. }} 
     VALUES ?surfaceFormProperty {
       csdb:name
       csdb:název
