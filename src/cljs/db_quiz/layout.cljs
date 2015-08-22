@@ -2,6 +2,7 @@
   (:require [db-quiz.config :refer [config]]
             [db-quiz.logic :as logic]
             [db-quiz.state :refer [app-state]]
+            [db-quiz.util :refer [join-by-space]]
             [clojure.string :as string]))
 
 (defn shade-colour
@@ -63,7 +64,7 @@
             availability (if (or loading? disabled? (not (#{"default" "missed"} ownership)))
                              "unavailable"
                              "available")]
-        [:g {:class (str "hexagon " availability)
+        [:g {:class (join-by-space "hexagon" availability (when (= ownership "active") "active"))
              :on-click (partial logic/pick-field id)} 
          [:polygon.hex-outer {:fill (str "url(#" ownership "-outer)")
                               :points (hex-coords center size)}]
