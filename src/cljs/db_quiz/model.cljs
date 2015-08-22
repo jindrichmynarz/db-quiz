@@ -104,10 +104,14 @@
       (replace #"\s*\([^)]+\)" "")
       (replace #"\s*\[[^\]]+\]" "")))
 
-(defn clear-description
-  "TODO: Implement cleaning"
-  [description]
-  description)
+(defn collapse-whitespace
+  "Replace consecutive whitespace characters with a single space."
+  [s]
+  (replace s #"\s{2,}" " "))
+
+(def clear-description
+  "Cleaning of descriptions"
+  (comp collapse-whitespace))
 
 (defn truncate-description
   "Truncate description to the configured maximum length.
@@ -196,9 +200,11 @@
         sparql-results (sparql-results-channel)]
     (go
       (swap! app-state #(assoc % :loading? true))
-      (let [query (render-template (<! query-channel) :data data)]
-        ; I wonder why cljs.pipe/pipe doesn't block.
-        (>! sparql-results (<! (sparql-query-channel sparql-endpoint query))))
+      (let [query (render-template (<! query-channel) :data data)
+            results (<! (sparql-query-channel sparql-endpoint query))]
+        (if results
+          (>! sparql-results results)
+          (reagent-modals/modal! (modals/error-loading-data sparql-endpoint))))
       (swap! app-state #(assoc % :loading? false)))
     sparql-results))
 
@@ -256,7 +262,7 @@
 (defn load-gdocs-items
   "Load items from Google Spreadsheet's worksheet."
   [spreadsheet-url]
-  (let [worksheet-id "od6" ; FIXME: Is this value used every time?
+  (let [worksheet-id "od6" ; FIXME: Is this value universally valid?
         spreadsheet-id (spreadsheet-url-to-id spreadsheet-url)
         url (str "https://spreadsheets.google.com/feeds/list/"
                  spreadsheet-id "/" worksheet-id "/public/full")
