@@ -152,13 +152,16 @@
   (update app-state :on-turn (partial toggle [:player-1 :player-2])))
 
 (defn test-winner
+  "Test if winner exists."
   [owner current-field]
-  (let [state (swap! app-state (partial change-ownership owner current-field))
+  (let [previous-ownership (get-in @app-state [:board current-field :ownership])
+        state (swap! app-state (partial change-ownership owner current-field))
         winner (find-winner (:board state))
         mark-fn (partial match-answer true)]
     (when winner
       (go (swap! app-state (comp mark-fn #(assoc % :winner winner)))
-          (<! (timeout verdict-display-time))
+          ; Showing correct answer is not necessary when a missed field is gained.
+          (when-not (= previous-ownership :missed) (<! (timeout verdict-display-time)))
           (swap! app-state (comp clear-answer deselect-current-field unmatch-answer))
           (redirect "#end")))))
 
