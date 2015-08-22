@@ -2,7 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [db-quiz.state :refer [app-state]]
             [db-quiz.config :refer [config]]
-            [db-quiz.normalize :refer [replace-diacritics]]
+            [db-quiz.normalize :refer [remove-punctuation replace-diacritics]]
             [db-quiz.util :refer [listen number-of-fields redirect toggle]]
             [cljs.core.async :refer [alts! close! chan put! timeout]]
             [clojure.string :as string]
@@ -106,6 +106,7 @@
   [answer]
   (-> answer
       replace-diacritics
+      remove-punctuation
       string/lower-case
       string/trim))
 
