@@ -3,10 +3,11 @@
             [db-quiz.logic :refer [init-board make-a-guess]]
             [db-quiz.model :as model] 
             [db-quiz.state :refer [app-state]]
-            [db-quiz.util :refer [join-by-space redirect toggle]]
+            [db-quiz.util :refer [join-by-space now redirect toggle]]
             [db-quiz.modals :as modals]
+            [db-quiz.geometry :as geo]
             [clojure.string :as string]
-            [reagent.core :refer [atom]]
+            [reagent.core :as reagent :refer [atom]]
             [reagent-forms.core :refer [bind-fields]]
             [reagent-modals.modals :as reagent-modals]))
 
@@ -217,6 +218,7 @@
                                        (when (= (.-keyCode e) 13)
                                          (make-a-guess)))
                         :placeholder "Odpověď"
+                        :spellCheck "false"
                         :type "text"}])
 
 (defn timeout
@@ -226,24 +228,88 @@
    [:div#timeout-shade {:style {:margin-left (str completion "%")
                                 :width (str (- 100 completion) "%")}}]])
 
+(defn canvas-renderer
+  "Path is made of segments, i.e. [segment-1 segment-2].
+  Each segment is a vector of coordinates, i.e. [[x1 y1] [x2 y2]]."
+  [this [width height] relative-path & {:keys [animation-duration line-width stroke-colour]}]
+  (let [context (.getContext (reagent/dom-node this) "2d")
+        _ (set! (.-lineWidth context) (* width line-width))
+        _ (set! (.-strokeStyle context) stroke-colour)
+        path (geo/relative-to-absolute-coords [width height] relative-path)
+        total-distance (geo/path-length path)
+        step-length (/ total-distance animation-duration)
+        start-time (now)]
+    (fn render []
+      (.clearRect context 0 0 width height)
+      (let [distance-travelled (min (* step-length (- (now) start-time))
+                                    total-distance)
+            segments (geo/path-travelled path distance-travelled)]
+        (.beginPath context)
+        (doseq [[[start-x start-y] & tail] segments]
+          (.moveTo context start-x start-y)
+          (doseq [[x y] tail]
+            (.lineTo context x y))
+          (.stroke context)))
+      (reagent/next-tick render))))
+
+(defn canvas-element
+  "Create canvas element identified with id, or given width and height,
+  by drawing path in anitmation.
+  animation-duration is in seconds.
+  line-width is relative line width to width."
+  [id [width height] path & {:keys [animation-duration line-width stroke-colour]
+                             :or {animation-duration 0.5
+                                  line-width 0.1
+                                  stroke-colour "#000000"}}]
+  (reagent/create-class
+      {:component-did-mount (fn [this]
+                              (reagent/next-tick (canvas-renderer this
+                                                                  [width height]
+                                                                  path
+                                                                  :animation-duration animation-duration
+                                                                  :line-width line-width
+                                                                  :stroke-colour stroke-colour)))
+       :display-name id
+       :reagent-render (fn [] [:canvas {:width width :height height}])}))
+
+(defn tick-canvas
+  "Animation of a tick symbol."
+  []
+  (canvas-element "tick-canvas"
+                  [20 20]
+                  [[[0.2 0.6] [0.4 0.8] [0.8 0.4]]]
+                  :line-width 0.2
+                  :stroke-colour "#3C763D"))
+
+(defn cross-canvas
+  "Cross-mark animated on a canvas"
+  []
+  (canvas-element "cross-canvas"
+                  [15 15]
+                  [[[0.1 0.1] [0.9 0.9]]
+                   [[0.9 0.1] [0.1 0.9]]]
+                  :line-width 0.2
+                  :stroke-colour "#A94442"))
+
 (defn verdict-component
   []
   (let [{:keys [board current-field verdict]} @app-state
         correct-answer (get-in board [current-field :label]) 
-        {:keys [glyphicon-class
+        {:keys [icon
                 success
                 verdict-class]} (if verdict
-                                  {:glyphicon-class "glyphicon-ok"
+                                  {:icon tick-canvas
                                    :success "Ano"
                                    :verdict-class "alert-success"}
-                                  {:glyphicon-class "glyphicon-remove"
+                                  {:icon cross-canvas
                                    :success "Ne"
                                    :verdict-class "alert-danger"})]
-    [:div#verdict.row {:class (when (nil? verdict) "transparent")}
-      [:div.col-sm-12
+    (when-not (nil? verdict)
+      [:div#verdict.row
+       [:div.col-sm-12
         [:p {:class (str "alert " verdict-class)}
-          [:span {:class (join-by-space "glyphicon" "glyphicon-start" glyphicon-class)}]
-          success ". Správná odpověď je " [:strong correct-answer] "."]]]))
+         [icon]
+         success ". Správná odpověď je " [:strong correct-answer] "."]]])))
 
 (defn question-box
   [id]
@@ -269,10 +335,7 @@
                :title "Nevim, dál!"}
               [:span.glyphicon.glyphicon-forward]
               " Dál"]]]]]
-      [verdict-component]
-      ;[:div.row
-      ;  [:p.col-sm-12 [:strong "Řešení: "] label]]
-      ]))
+      [verdict-component]]))
 
 (defn player-on-turn
   "Show the name of the player, whose turn it currently is."
