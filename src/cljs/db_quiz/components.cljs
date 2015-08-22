@@ -6,6 +6,8 @@
             [db-quiz.util :refer [join-by-space now redirect toggle]]
             [db-quiz.modals :as modals]
             [db-quiz.geometry :as geo]
+            [db-quiz.config :refer [config]]
+            [db-quiz.layout :refer [shade-colour]]
             [clojure.string :as string]
             [reagent.core :as reagent :refer [atom]]
             [reagent-forms.core :refer [bind-fields]]
@@ -337,6 +339,34 @@
               " Dál"]]]]]
       [verdict-component]]))
 
+(defn easter-egg
+  []
+  (let [[width height] [40 20]]
+    (reagent/create-class
+      {:component-did-mount (fn [this]
+                              (let [context (.getContext (reagent/dom-node this) "2d")
+                                    _ (set! (.-fillStyle context)
+                                            (shade-colour (get-in config [:colours :player-1]) -30))
+                                    relative-path [[[0 0.5] [0.2 0] [0.55 0] [0.8 0.45]]
+                                                   [[0.8 0.45] [1 0.2] [0.8 0.45] [1 0.2]]
+                                                   [[1 0.2] [0.93 0.5] [0.93 0.5] [1 0.8]]
+                                                   [[1 0.8] [0.8 0.55] [1 0.8] [0.8 0.55]]
+                                                   [[0.8 0.55] [0.55 1] [0.2 1] [0 0.5]]]
+                                    path (geo/relative-to-absolute-coords [width height]
+                                                                          relative-path)
+                                    [start-x start-y] (ffirst path)]
+                                (doto context
+                                  (.beginPath)
+                                  (.moveTo start-x start-y))
+                                (doseq [[_ [cp1x cp1y] [cp2x cp2y] [x y]] path]
+                                  (.bezierCurveTo context
+                                                  cp1x cp1y
+                                                  cp2x cp2y
+                                                  x y))
+                                (.fill context)))
+       :display-name "easter-egg"
+       :reagent-render (fn [] [:canvas#easter-egg {:width width :height height}])})))
+
 (defn player-on-turn
   "Show the name of the player, whose turn it currently is."
   []
@@ -352,7 +382,8 @@
         [:div#on-turn {:class (str (name on-turn) " " font-class)}
           (if (> player-name-length 20)
             (str (subs player-name 0 17) "...")
-            player-name)]]
+            player-name)
+          (when (and (= on-turn :player-1) (= player-name "Rybička")) [easter-egg])]]
       [timeout on-turn completion]]))
 
 (defn play-page

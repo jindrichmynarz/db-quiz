@@ -383,3 +383,7 @@ li.highlighted {
   text-align: left;
   padding: .5em 1.5em;
 }
+
+#easter-egg {
+  margin-left: 6px;
+}
