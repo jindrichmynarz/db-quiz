@@ -5,75 +5,12 @@
             [db-quiz.state :refer [app-state]]
             [db-quiz.modals :as modals]
             [db-quiz.util :refer [number-of-fields]]
+            [db-quiz.normalize :as normalize]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<! >! chan pipe]]
             [clojure.string :refer [join lower-case replace split trim]]
             [cljsjs.mustache :as mustache]
             [reagent-modals.modals :as reagent-modals]))
-
-; ----- Private vars -----
-
-(def load-labels-template
-  "PREFIX dbo:     <http://dbpedia.org/ontology/>
-  PREFIX rdfs:     <http://www.w3.org/2000/01/rdf-schema#>
-
-  SELECT ?label
-  WHERE {
-    {
-      SELECT (STR(?_label) AS ?label)
-      WHERE {
-        GRAPH <http://cs.dbpedia.org> {
-          VALUES ?class {
-            {{#classes}}
-            <{{{.}}}>
-            {{/classes}}
-          }
-          [] a ?class ;
-            rdfs:label ?_label ;
-            dbo:abstract ?_description .
-          FILTER (!REGEX(?_label, '^(\\\\p{Lu}\\\\.?)+$')
-                  &&
-                  !REGEX(?_label, '^.*\\\\d+.*$') 
-                  &&
-                  (STRLEN(?_description) > 140)
-                  &&
-                  langMatches(lang(?_label), 'cs')
-                  &&
-                  langMatches(lang(?_description), 'cs'))
-        }
-      }
-      ORDER BY ?label
-    }
-  }
-  LIMIT {{limit}}
-  OFFSET {{offset}}")
-
-(def load-labels-group-template
-  "PREFIX dbo:     <http://dbpedia.org/ontology/>
-  PREFIX rdfs:     <http://www.w3.org/2000/01/rdf-schema#>
-
-  SELECT (GROUP_CONCAT(STR(?_label); separator = '|') AS ?labels)
-  WHERE {
-    GRAPH <http://cs.dbpedia.org> {
-      VALUES ?class {
-        {{#classes}}
-        <{{{.}}}>
-        {{/classes}}
-      }
-      [] a ?class ;
-        rdfs:label ?_label ;
-        dbo:abstract ?_description .
-      FILTER (!REGEX(?_label, '^(\\\\p{Lu}\\\\.?)+$')
-              &&
-              !REGEX(?_label, '^.*\\\\d+.*$') 
-              &&
-              (STRLEN(?_description) > 140)
-              &&
-              langMatches(lang(?_label), 'cs')
-              &&
-              langMatches(lang(?_description), 'cs'))
-    }
-  }")
 
 ; ----- Public functions -----
 
@@ -111,7 +48,7 @@
 
 (def clear-description
   "Cleaning of descriptions"
-  (comp collapse-whitespace))
+  (comp normalize/space-sentences collapse-whitespace))
 
 (defn truncate-description
   "Truncate description to the configured maximum length.
@@ -208,44 +145,6 @@
       (swap! app-state #(assoc % :loading? false)))
     sparql-results))
 
-(def load-labels
-  (let [{{classes :default} :classes
-         :keys [page-size endpoint]} (get-in config [:data :sparql])
-        render-fn (fn [offset] (render-template load-labels-template
-                                                :data {:classes classes
-                                                       :limit page-size
-                                                       :offset offset}))
-        query-fn (fn [offset] (sparql-query-channel endpoint (render-fn offset)))
-        sparql-results (sparql-results-channel)
-        results (atom [])]
-    (fn []
-      (go-loop [offset 0]
-               (swap! app-state #(assoc % :loading? true))
-               (let [results (<! (query-fn offset))]
-                 (if results
-                   (do (js/console.log (clj->js results))
-                       (>! sparql-results results)
-                       (recur (+ offset page-size)))
-                   (js/console.log "Wut, no results?"))) 
-               (swap! app-state #(assoc % :loading? false)))
-      (go (let [labels (<! sparql-results)]
-            (swap! results #(conj % labels)))) 
-      results)))
-
-; (defn sparql-autocomplete
-;   "Autocomplete from SPARQL endpoint.
-;   request: jQuery UI autocomplete's request object
-;   response: channel to put the response to"
-;   [request response]
-;   (let [fragment (lower-case (.-term request))
-;         sparql-results (sparql-results-channel)
-;         query (render-template autocomplete-template
-;                                :data {:classes (get-in config [:data :sparql :classes :default])
-;                                       :fragment fragment})
-;         sparql-query (sparql-query-channel query)]
-;     (go (let [results (map :label (<! (wrap-load sparql-query sparql-results)))]
-;           (response (clj->js results))))))
-
 (defn spreadsheet-url-to-id
   "Extract ID from Google Spreadsheet URL"
   [url]
@@ -297,20 +196,36 @@
 (defmethod load-board-data :dbpedia
   [board callback]
   (let [{{:keys [classes difficulty language]} :options} @app-state
-        [endpoint query-file] (case language
-                                    :czech ["http://cs.dbpedia.org/sparql" "sparql/cs_dbpedia.mustache"]
-                                    :english ["http://dbpedia.org/sparql" "sparql/en_dbpedia.mustache"])
-        offset (+ (case difficulty
-                        :easy 0
-                        :normal 3750
-                        :hard 8750)
-                  (rand-int 2500))
-        query-channel (sparql-query endpoint
-                                    query-file 
-                                    :data {:classes classes
-                                           :limit number-of-fields
-                                           :offset offset})]
-    (go (let [results (map despoilerify (<! query-channel))]
+        {:keys [count-file endpoint query-file]} (case language
+                                                   :czech {:count-file "sparql/cs_dbpedia_count.mustache"
+                                                           :endpoint "http://cs.dbpedia.org/sparql"
+                                                           :query-file "sparql/cs_dbpedia.mustache"}
+                                                   :english {:count-file "sparql/en_dbpedia_count.mustache"
+                                                             :endpoint "http://dbpedia.org/sparql"
+                                                             :query-file "sparql/en_dbpedia.mustache"})
+        ; Offset is generated from the total count of available instances.
+        ; The count is split into thirds, in which random offset is generated
+        ; to select a random subset of the third. First third is easy difficulty,
+        ; second third is normal difficulty, and the last third is hard difficulty.
+        count-to-offset (fn [c]
+                          (let [third (js/Math.floor (/ c 3))
+                                offset (rand-int (- third number-of-fields))]
+                            (case difficulty
+                                  :easy offset
+                                  :normal (+ third offset)
+                                  :hard (+ (* third 2) offset))))
+        count-query-channel (sparql-query endpoint
+                                          count-file
+                                          :data {:classes classes})
+        query-channel-fn (fn [offset]
+                           (sparql-query endpoint
+                                         query-file
+                                         :data {:classes classes
+                                                :limit number-of-fields
+                                                :offset offset}))]
+    (go (let [count-result (js/parseInt (:count (first (<! count-query-channel))) 10)
+              offset (count-to-offset count-result)
+              results (map despoilerify (<! (query-channel-fn offset)))]
           (swap! app-state #(assoc % :board (merge-board-with-data board results)))
           (callback)))))
 

@@ -1,0 +1,38 @@
+{{!
+@param Array<URI> classes
+}}
+
+PREFIX dbo:     <http://dbpedia.org/ontology/>
+PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT (COUNT(DISTINCT ?subject) AS ?count)
+WHERE {
+  {
+    SELECT DISTINCT ?subject
+    WHERE {
+      GRAPH <http://cs.dbpedia.org> {
+        VALUES ?class {
+          {{#classes}}
+          <{{{.}}}>
+          {{/classes}}
+        }
+        ?subject a ?class .
+      }
+    }
+  }
+  GRAPH <http://cs.dbpedia.org> {
+    ?subject rdfs:label ?_label ;
+      dbo:abstract ?_description .
+    FILTER (!REGEX(?_label, "^(\\p{Lu}\\.?)+$") {{! Filter out abbreviations, such as "R.E.M.". }}
+            &&
+            !REGEX(?_label, "^.*\\d+.*$") {{! Eliminate digits }}
+            &&
+            (STRLEN(?_description) > 140) {{! Get only resources with longer descriptions. }} 
+            &&
+            langMatches(lang(?_label), "cs")
+            &&
+            langMatches(lang(?_description), "cs")
+            &&
+            (STRLEN(?_label) < 40)) {{! Eliminate too long labels. }} 
+  }
+}
