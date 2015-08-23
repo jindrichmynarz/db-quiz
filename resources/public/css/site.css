@@ -79,11 +79,12 @@ a:hover {
   padding-top: 1em;
 }
 
-/*
 .player-field label:before {
   content: "\2B22";
-  font-size: 2em;
+  font-size: 1.33em;
+  margin-right: 4px;
 }
+
 .player-field.player-1 label:before {
   color: #fc4349;
 }
@@ -91,7 +92,6 @@ a:hover {
 .player-field.player-2 label:before {
   color: #354d65;
 }
-*/
 
 .btn-default.active {
   background-color: #C8C8C8;
@@ -99,7 +99,13 @@ a:hover {
 }
 
 .btn.btn-default:focus, button.close {
-  outline: 0; 
+  outline: 0;
+}
+
+/* Get rid of the confusing focus style for inactive buttons. */
+.btn.btn-default:focus:not(.active) {
+  background-color: #fff;
+  border-color: #ccc;
 }
 
 .form-control:focus {
