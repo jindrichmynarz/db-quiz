@@ -142,6 +142,16 @@
   (assoc app-state :timer {:completion 0
                            :start (.getTime (js/Date.))}))
 
+(defn annull-game!
+  "Annull abandoned game."
+  []
+  (swap! app-state (comp #(assoc %
+                                 :answer nil
+                                 :current-field nil
+                                 :timer {:completion 0
+                                         :start 0}
+                                 :verdict nil))))
+
 (def unmatch-answer
   "Clear the answer match status."
   (partial match-answer nil))
