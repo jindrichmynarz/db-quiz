@@ -63,7 +63,9 @@
             disabled? (not (nil? current-field))
             availability (if (or loading? disabled? (not (#{"default" "missed"} ownership)))
                              "unavailable"
-                             "available")]
+                             (case ownership
+                                   "default" "available"
+                                   "missed" "missed"))]
         [:g {:class (join-by-space "hexagon" availability (when (= ownership "active") "active"))
              :on-click (partial logic/pick-field id)} 
          [:polygon.hex-outer {:fill (str "url(#" ownership "-outer)")
