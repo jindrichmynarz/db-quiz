@@ -26,11 +26,11 @@
      [:h2 "Pravidla hry"]
      [:p "Hra je založena na známé televizní soutěži "
       [:a {:href "https://cs.wikipedia.org/wiki/AZ-kv%C3%ADz"} "AZ-kvíz"]
-      ". Cílem hry je obsadit pole souvisle spojující všechny 3 strany hrací plochy. Hráč získá pole v případě, kdy správně zodpoví položenou otázku. Každá otázka obsahuje popis hádané věci a zkratku jejího názvu. Pokud je otázka pro zvolené pole zodpovězena nesprávně, pole je označeno jako neuhodnuté a jakýkoli hráč na tahu ho může získat bez nutnosti zodpovídání otázky. Na zodpovězení otázky má každý hráč 45 sekund. První hráč, který svými poli souvisle propojí všechny 3 strany hrací plochy, se stává vítězem. Začíná náhodně vylosovaný hráč."]
+      ". Jejím cílem je obsadit pole souvisle spojující všechny 3 strany hrací plochy. Hráč získá pole v případě, kdy správně zodpoví položenou otázku. Každá otázka obsahuje popis hádané věci a zkratku jejího názvu. Pokud je otázka pro zvolené pole zodpovězena nesprávně, pole je označeno jako neuhodnuté a jakýkoli hráč na tahu ho může získat bez nutnosti zodpovídání otázky. Na zodpovězení otázky má každý hráč 45 sekund. První hráč, který svými poli souvisle propojí všechny 3 strany hrací plochy, se stává vítězem. Začíná náhodně vylosovaný hráč."]
      [:h2 "Jak hra funguje?"]
      [:p "V případě DB-quizu jsou herní otázky náhodně generovány na základě databáze. Ve hře je jako databáze použita sémantická podoba české Wikipedia zvaná "
       [:a {:href "http://cs.dbpedia.org/"} "DBpedia"]
-      "."]
+      ". Alternativně lze použít otázky z tabulek v Google Spreadsheets."]
      [:p "Hru dal dohromady "
       [:a {:href "http://mynarz.net/#jindrich"} "Jindřich Mynarz"]
       " s pomocí přátel. Zdrojový kód hry je k dispozici "
@@ -49,10 +49,21 @@
 
 (defn invalid-google-spreadsheet-url
   [url]
-  (modal [:div "Neplatné URL Google Spreadsheetu: " url "."]))
+  (modal [:div "Neplatné URL Google Spreadsheetu: \"" url "\"."]))
+
+(defn invalid-options
+  [errors]
+  (modal [:div
+          [:h2 [:span.glyphicon.glyphicon-exclamation-sign.glyphicon-start]
+           "Chyby v nastavení:"]
+          [:ul (for [error errors]
+                 [:li {:key error} error])]]))
 
 (defn invalid-spreadsheet-rows
   [actual]
   {:pre [(pos-number? actual)]}
   (modal [:div "Nesprávný počet řádků v tabulce. Je třeba alespoň "
           number-of-fields "řádků, ale tabulka má jen " actual " řádků."]))
+
+(def offline
+  (modal [:div "Jste offline. Hra funguje pouze s připojením k internetu."]))
