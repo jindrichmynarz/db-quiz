@@ -1,5 +1,5 @@
 {{!
-@param Array<URI> classes
+@param Array<Array<URI, URI>> selectors
 }}
 
 PREFIX dbo:     <http://dbpedia.org/ontology/>
@@ -11,12 +11,12 @@ WHERE {
     SELECT DISTINCT ?subject
     WHERE {
       GRAPH <http://cs.dbpedia.org> {
-        VALUES ?class {
-          {{#classes}}
-          <{{{.}}}>
-          {{/classes}}
+        VALUES (?p ?o) {
+          {{#selectors}}
+          (<{{{p}}}> <{{{o}}}>)
+          {{/selectors}}
         }
-        ?subject a ?class .
+        ?subject ?p ?o .
       }
     }
   }

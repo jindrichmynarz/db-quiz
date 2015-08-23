@@ -1,7 +1,7 @@
 {{!
-@param Array<URI> classes
-@param int        limit
-@param int        offset
+@param Array<Array<URI, URI>> selectors
+@param int                    limit
+@param int                    offset
 }}
 
 PREFIX csdb:    <http://cs.dbpedia.org/property/>
@@ -21,12 +21,12 @@ WHERE {
         SELECT ?subject (COUNT(?link) AS ?inDegree)
         WHERE {
           GRAPH <http://cs.dbpedia.org> {
-            VALUES ?class {
-              {{#classes}}
-              <{{{.}}}>
-              {{/classes}}
+            VALUES (?p ?o) {
+              {{#selectors}}
+              (<{{{p}}}> <{{{o}}}>)
+              {{/selectors}}
             }
-            ?subject a ?class .
+            ?subject ?p ?o .
             ?link dbo:wikiPageWikiLink ?subject .
           }
         }

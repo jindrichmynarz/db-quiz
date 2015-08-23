@@ -195,7 +195,7 @@
 
 (defmethod load-board-data :dbpedia
   [board callback]
-  (let [{{:keys [classes difficulty language]} :options} @app-state
+  (let [{{:keys [difficulty language selectors]} :options} @app-state
         {:keys [count-file endpoint query-file]} (case language
                                                    :czech {:count-file "sparql/cs_dbpedia_count.mustache"
                                                            :endpoint "http://cs.dbpedia.org/sparql"
@@ -216,11 +216,11 @@
                                   :hard (+ (* third 2) offset))))
         count-query-channel (sparql-query endpoint
                                           count-file
-                                          :data {:classes classes})
+                                          :data {:selectors selectors})
         query-channel-fn (fn [offset]
                            (sparql-query endpoint
                                          query-file
-                                         :data {:classes classes
+                                         :data {:selectors selectors
                                                 :limit number-of-fields
                                                 :offset offset}))]
     (go (let [count-result (js/parseInt (:count (first (<! count-query-channel))) 10)

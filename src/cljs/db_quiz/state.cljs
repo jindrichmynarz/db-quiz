@@ -7,14 +7,17 @@
          :current-field nil
          :loading? false
          :on-turn (rand-nth [:player-1 :player-2])
-         :options {:classes ["http://dbpedia.org/ontology/Person"
-                             "http://dbpedia.org/ontology/Place"
-                             "http://dbpedia.org/ontology/Work"]
-                   :data-source :dbpedia
+         :options {:data-source :dbpedia
                    :difficulty :normal
                    :doc ""
                    :labels :numeric
                    :language :czech
+                   :selectors [{:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                                :o "http://dbpedia.org/ontology/Person"}
+                               {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                                :o "http://dbpedia.org/ontology/Place"}
+                               {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                                :o "http://dbpedia.org/ontology/Work"}]
                    :share-url ""}
          :players {:player-1 "Dmitrij"
                    :player-2 "Paní M."}
