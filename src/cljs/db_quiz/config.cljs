@@ -3,13 +3,13 @@
 (defonce config
   {; Number of hexagons on one side of the triangle
    :board-size 7
-   :colours {:active "#eeeeee" 
+   :colours {:active "#eeeeee"
              :default "#bcbcbc"
              :hover "#dedede"
+             :hover-missed "#4d4d4d"
              :missed "#333333"
              :player-1 "#fc4349"
-             :player-2 "#354d65" ;"#2c3e50"
-             }
+             :player-2 "#354d65"}
    :data {:sparql {; Maximum number of results per query
                    :page-size 5000}}
    :guess-similarity-threshold 0.94
