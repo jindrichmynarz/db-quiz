@@ -1,19 +1,21 @@
 (ns db-quiz.components
-  (:require [db-quiz.layout :refer [hex-triangle]]
-            [db-quiz.logic :refer [init-board make-a-guess]]
+  (:require [db-quiz.layout :refer [hex-triangle shade-colour]]
+            [db-quiz.logic :refer [annull-game! init-board make-a-guess]]
             [db-quiz.model :as model] 
             [db-quiz.state :refer [app-state]]
             [db-quiz.util :refer [join-by-space now redirect toggle]]
             [db-quiz.modals :as modals]
             [db-quiz.geometry :as geo]
             [db-quiz.config :refer [config]]
-            [db-quiz.layout :refer [shade-colour]]
+            [db-quiz.normalize :refer [trim-player-name]]
             [clojure.string :as string]
             [reagent.core :as reagent :refer [atom]]
             [reagent-forms.core :refer [bind-fields]]
             [reagent-modals.modals :as reagent-modals]))
 
 (defn parse-hash
+  "Parse 'query parameters' from hash fragment in the URL.
+  For example '#?doc=1234' is parsed to {:doc \"1234\"}."
   [h]
   (let [kv-pairs (-> h
                      (string/replace #"^#\?" "")
@@ -24,31 +26,80 @@
                kv-pairs))))
 
 (defn set-hash-options!
+  "Set options based on the params in URL's hash fragment.
+  Used to set Google Spreadsheet URL."
   []
   (let [location (.-location js/window)
         h (js/decodeURIComponent (.-hash location))]
     (when h
       (when-let [doc-url (:doc (parse-hash h))]
-        ; TODO: Refactor
         (swap! app-state (comp #(assoc-in % [:options :doc] (js/decodeURIComponent doc-url))
                                #(assoc-in % [:options :data-source] :gdrive)
                                #(assoc-in % [:options :share-url] (.-href location))))))))
 
-; ----- Common components -----
+(defn set-language!
+  "Set preferred language based on the browser's settings.
+  Only supports Czech and English with Czech as default."
+  []
+  (let [language (case (.slice (.-language js/navigator) 0 2)
+                       "en" :english
+                       "cs" :czech
+                       :czech)]
+    (swap! app-state #(assoc-in % [:options :language] language))))
 
-(defn label-element
-  [for-id text]
-  [:label.col-sm-4.control-label {:for for-id} text])
+(defn set-defaults!
+  "Set default options on load."
+  []
+  (set-hash-options!)
+  (set-language!))
+
+; ----- Common components -----
 
 (def info-button
   [:button#info-button.btn.btn-default {:on-click #(reagent-modals/modal! modals/game-info
-                                                                          {:size :lg})
-                                        :title "O hře"}
-   [:span.glyphicon.glyphicon-info-sign]])
+                                                                          {:size :lg})}
+   [:span.glyphicon.glyphicon-info-sign.glyphicon-start]
+   "O hře"])
+
+(defn label-element
+  "Label with text for input identified with for-id"
+  [for-id text]
+  [:label.col-sm-4.control-label {:for for-id} text])
+
+(defn select-box
+  "Form select box.
+  If single? is true then only 1 value can be selected at a time.
+  Otherwise, multiple values can be selected.
+  id is a string identifier of the select's input.
+  label is used to label the input.
+  buttons are maps of [:label :value] pairs for the buttons in the select box.
+  Less than 3 buttons are presented in a row. More than 3 buttons are presented
+  vertically."
+  [single? id label & buttons]
+  {:pre [(= (type single?) js/Boolean)
+         (= (type id) js/String)]}
+  (let [btn-group-class (if (> (count buttons) 3)
+                          "btn-group-vertical"
+                          "btn-group")]
+    [:div.form-group
+     [label-element id label]
+     [:div {:class (join-by-space "col-sm-8" btn-group-class)
+            :field (if single? :single-select :multi-select)
+            :id (keyword id)
+            :role "group"}
+      (for [{:keys [value label]} buttons]
+        [:button.btn.btn-default {:key value} label])]]))
+
+(def single-select
+  (partial select-box true))
+
+(def multi-select
+  (partial select-box false))
 
 ; ----- Home page -----
 
 (defn loading-indicator
+  "Indicates if data is loaded."
   []
   (when (:loading? @app-state)
     [:div#loading
@@ -56,6 +107,7 @@
      [:p.vcenter "Načítání..."]]))
 
 (defn player-form-field
+  "Form field for player's name"
   [id label]
   (let [local-id (keyword (str "players." id))]
     [:div {:class (join-by-space "form-group" "player-field" id)}
@@ -67,6 +119,7 @@
        "Jméno hráče musí být vyplněno!"]]]))
 
 (def google-spreadsheet-url
+  "Input for URL of a Google Spreadsheet to load data from"
   [:div.form-group
    [:p [:label.control-label {:for "options.doc"} "Google Spreadsheet URL"]
          [:a {:on-click #(reagent-modals/modal! modals/google-spreadsheet-help)}
@@ -75,28 +128,13 @@
     [:input.form-control {:field :text :id :options.doc :type "url"}]]])
 
 (def share-url
+  "URL of the game based on given Google Spreadsheet"
   [:div.form-group
    [:p [:label.control-label {:for "options.share-url"} "URL hry"]]
    [:p [:textarea.form-control {:field :text
                                 :id :options.share-url
                                 :readOnly "readOnly"
                                 :rows 4}]]])
-
-(defn select-box
-  [single? id label & buttons]
-  [:div.form-group
-   [label-element id label]
-   [:div.col-sm-8.btn-group {:field (if single? :single-select :multi-select)
-                              :id (keyword id)
-                              :role "group"}
-    (for [{:keys [value label]} buttons]
-      [:button.btn.btn-default {:key value} label])]])
-
-(def single-select
-  (partial select-box true))
-
-(def multi-select
-  (partial select-box false))
 
 (def field-labelling
   (single-select "options.labels"
@@ -118,19 +156,33 @@
                  {:label "Vysoká" :value :hard}))
 
 (def class-picker
-  (multi-select "options.classes"
+  (multi-select "options.selectors"
                 "Druhy otázek"
-                {:label "Osoby" :value "http://dbpedia.org/ontology/Person"}
-                {:label "Místa" :value "http://dbpedia.org/ontology/Place"}
-                {:label "Díla" :value "http://dbpedia.org/ontology/Work"}))
+                {:label "Osoby" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                                        :o "http://dbpedia.org/ontology/Person"}}
+                {:label "Místa" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                                        :o "http://dbpedia.org/ontology/Place"}}
+                {:label "Díla" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                                       :o "http://dbpedia.org/ontology/Work"}}
+                {:label "Lidé z Brna" :value {:p "http://purl.org/dc/terms/subject"
+                                              :o "http://cs.dbpedia.org/resource/Kategorie:Narození_v_Brně"}}
+                {:label "Členové KSČ" :value {:p "http://purl.org/dc/terms/subject"
+                                              :o "http://cs.dbpedia.org/resource/Kategorie:Členové_KSČ"}}
+                {:label "Umělci" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                                         :o "http://dbpedia.org/ontology/Artist"}}
+                {:label "Politici" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                                           :o "http://dbpedia.org/ontology/Politician"}}
+                {:label "Hudebníci" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                                            :o "http://dbpedia.org/ontology/MusicalArtist"}}
+                {:label "Filmy" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                                        :o "http://dbpedia.org/ontology/Film"}}))
 
 (def google-spreadsheet-options
   [:div google-spreadsheet-url
         share-url])
 
 (def dbpedia-options
-  [:div language-picker
-        class-picker
+  [:div class-picker
         difficulty-picker
         field-labelling])
 
@@ -171,13 +223,15 @@
 
 (def basic-options
   [:div
+   language-picker
    (player-form-field "player-1" "1. hráč")
    (player-form-field "player-2" "2. hráč")])
 
 (def start-menu
   (let [options-hidden (atom true)]
-    (set-hash-options!)
+    (set-defaults!)
     (fn []
+      (annull-game!)
       [:div.col-sm-6.col-sm-offset-3
        [:div#start-menu.form-horizontal
         [bind-fields basic-options app-state]
@@ -211,7 +265,7 @@
 
 ; ----- Play page -----
 
-(def autocomplete
+(def guess
   [:input.form-control {:autoFocus "autoFocus"
                         :field :text
                         :id :answer
@@ -224,6 +278,7 @@
                         :type "text"}])
 
 (defn timeout
+  "Progress bar showing the ellapsed time from player's turn."
   [on-turn completion]
   [:div.row
    [:div#timeout {:class (name on-turn)}]
@@ -280,7 +335,7 @@
   (canvas-element "tick-canvas"
                   [20 20]
                   [[[0.2 0.6] [0.4 0.8] [0.8 0.4]]]
-                  :line-width 0.2
+                  :line-width 0.15
                   :stroke-colour "#3C763D"))
 
 (defn cross-canvas
@@ -294,6 +349,7 @@
                   :stroke-colour "#A94442"))
 
 (defn verdict-component
+  "Show verdict if answer was correct or not."
   []
   (let [{:keys [board current-field verdict]} @app-state
         correct-answer (get-in board [current-field :label]) 
@@ -309,7 +365,7 @@
     (when-not (nil? verdict)
       [:div#verdict.row
        [:div.col-sm-12
-        [:p {:class (str "alert " verdict-class)}
+        [:p {:class (join-by-space "alert" verdict-class)}
          [icon]
          success ". Správná odpověď je " [:strong correct-answer] "."]]])))
 
@@ -325,7 +381,7 @@
       [:div.row
         [:div.col-sm-12
           [:div.input-group
-            [bind-fields autocomplete app-state]
+            [bind-fields guess app-state]
             [:span.input-group-btn
              [:button.btn.btn-primary
               {:on-click make-a-guess
@@ -340,13 +396,14 @@
       [verdict-component]]))
 
 (defn easter-egg
-  []
+  "Easter egg that renders a symbol of fish."
+  [player]
   (let [[width height] [40 20]]
     (reagent/create-class
       {:component-did-mount (fn [this]
                               (let [context (.getContext (reagent/dom-node this) "2d")
                                     _ (set! (.-fillStyle context)
-                                            (shade-colour (get-in config [:colours :player-1]) -30))
+                                            (shade-colour (get-in config [:colours player]) -30))
                                     relative-path [[[0 0.5] [0.2 0] [0.55 0] [0.8 0.45]]
                                                    [[0.8 0.45] [1 0.2] [0.8 0.45] [1 0.2]]
                                                    [[1 0.2] [0.93 0.5] [0.93 0.5] [1 0.8]]
@@ -373,29 +430,28 @@
   (let [{{:keys [completion start]} :timer
          :keys [on-turn players]} @app-state
         player-name (on-turn players)
-        player-name-length (count player-name)
-        font-class (cond (< player-name-length 6) "font-large"
-                         (< player-name-length 10) "font-regular"
-                         :else "font-small")]
+        [trimmed-name font-class] (trim-player-name player-name)]
     [:div
       [:div.row
-        [:div#on-turn {:class (str (name on-turn) " " font-class)}
-          (if (> player-name-length 20)
-            (str (subs player-name 0 17) "...")
-            player-name)
-          (when (and (= on-turn :player-1) (= player-name "Rybička")) [easter-egg])]]
+        [:div#on-turn {:class (join-by-space (name on-turn) font-class)}
+          trimmed-name
+          (when (= player-name "Rybička") [easter-egg on-turn])]]
       [timeout on-turn completion]]))
 
 (defn play-page
   []
-  (let [{:keys [current-field]} @app-state]
-    [:div.container-fluid
-     [:div.row
-      [:div.col-sm-6 [hex-triangle]]
-      [:div#question-box.col-sm-6
-       [player-on-turn]
-       (when current-field 
-         [question-box current-field])]]]))
+  (let [{:keys [board current-field]} @app-state]
+    (if (empty? board)
+      (redirect "/") ; If no data is loaded, redirect to home page. TODO: Can we redirect to root?
+      [:div.container-fluid
+       info-button
+       [:div.row
+        [:div.col-sm-6 [hex-triangle]]
+        [:div#question-box.col-sm-6
+         [player-on-turn]
+         (when current-field
+           [question-box current-field])]]
+       [reagent-modals/modal-window]])))
 
 ; ----- End page -----
 
