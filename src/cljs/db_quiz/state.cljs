@@ -19,8 +19,8 @@
                                {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
                                 :o "http://dbpedia.org/ontology/Work"}]
                    :share-url ""}
-         :players {:player-1 "Dmitrij"
-                   :player-2 "Paní M."}
+         :players {:player-1 ""
+                   :player-2 ""}
          :timer {:completion 0
                  :start 0}
          :verdict nil
