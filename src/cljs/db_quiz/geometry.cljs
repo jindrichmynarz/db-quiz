@@ -34,7 +34,6 @@
 (defn path-travelled
   "Returns points up to distance travelled."
   ; FIXME: Refactor nasty sequence manipulations.
-  ; TODO: Add test (= (path-length *result*) distance-travelled)
   [path distance-travelled]
   {:pre [; Every path segment needs to have at least 2 points.
          (every? (partial < 1) (map count path))
