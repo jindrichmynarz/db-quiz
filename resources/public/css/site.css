@@ -387,3 +387,9 @@ li.highlighted {
 #easter-egg {
   margin-left: 6px;
 }
+
+#info-button {
+  position: fixed;
+  top: 2%;
+  left: 2%;
+}
