@@ -183,8 +183,25 @@
           results-chan)
       (reagent-modals/modal! (modals/invalid-google-spreadsheet-url spreadsheet-url)))))
 
-(defn- merge-board-with-data
+(defmulti merge-board-with-data
   "Merge data with questions into the initialized board."
+  (fn [] (get-in @app-state [:options :labels])))
+
+(defmethod merge-board-with-data :alphabetic
+  [board data]
+  (letfn [(field-by-initial [initial]
+            (first (filter (fn [[k {:keys [text] :as v}]]
+                             (= text initial))
+                           board)))]
+    (into {}
+      (map (fn [{:keys [abbreviation] :as result}]
+             (let [[k v] (field-by-initial (if (zero? (.indexOf abbreviation "Ch"))
+                                             "Ch"
+                                             (first abbreviation)))]
+               [k (merge v result)]))
+           data))))
+
+(defmethod merge-board-with-data :default
   [board data]
   (into {}
         (map (fn [[k v] result] [k (merge v result)])
@@ -195,14 +212,12 @@
 
 (defmethod load-board-data :dbpedia
   [board callback]
-  (let [{{:keys [difficulty language selectors]} :options} @app-state
-        {:keys [count-file endpoint query-file]} (case language
-                                                   :czech {:count-file "sparql/cs_dbpedia_count.mustache"
-                                                           :endpoint "http://cs.dbpedia.org/sparql"
-                                                           :query-file "sparql/cs_dbpedia.mustache"}
-                                                   :english {:count-file "sparql/en_dbpedia_count.mustache"
-                                                             :endpoint "http://dbpedia.org/sparql"
-                                                             :query-file "sparql/en_dbpedia.mustache"})
+  (let [{{:keys [difficulty labels selectors]} :options} @app-state
+        endpoint "http://cs.dbpedia.org/sparql"
+        count-file "sparql/cs_dbpedia_count.mustache"
+        query-file (case labels
+                         :numeric "sparql/cs_dbpedia.mustache"
+                         :alphabetic "sparql/cs_dbpedia_az.mustache") 
         ; Offset is generated from the total count of available instances.
         ; The count is split into thirds, in which random offset is generated
         ; to select a random subset of the third. First third is easy difficulty,
