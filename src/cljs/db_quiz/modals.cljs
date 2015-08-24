@@ -18,7 +18,7 @@
   (modal
     [:div "Chyba při načítání dat ze SPARQL endpointu "
      [:a {:href sparql-endpoint} sparql-endpoint]
-     ". Zkuste hru znovu načíst."]))
+     ". Zkuste snížit počet okruhů otázek nebo hru znovu načíst."]))
 
 (def game-info
   (modal
@@ -51,11 +51,16 @@
   [url]
   (modal [:div "Neplatné URL Google Spreadsheetu: \"" url "\"."]))
 
+(defn invalid-number-of-results
+  [expected actual]
+  (modal [:div "Načteno nesprávné množství dat. Hra potřebuje " expected " položek, ale jen "
+          actual " bylo načteno. Zkuste rozšířit okruhy otázek."]))
+
 (defn invalid-options
   [errors]
   (modal [:div
           [:h2 [:span.glyphicon.glyphicon-exclamation-sign.glyphicon-start]
-           "Chyby v nastavení:"]
+           "Chyby v nastavení"]
           [:ul (for [error errors]
                  [:li {:key error} error])]]))
 

@@ -240,9 +240,12 @@
                                                 :offset offset}))]
     (go (let [count-result (js/parseInt (:count (first (<! count-query-channel))) 10)
               offset (count-to-offset count-result)
-              results (map despoilerify (<! (query-channel-fn offset)))]
-          (swap! app-state #(assoc % :board (merge-board-with-data board results)))
-          (callback)))))
+              results (map despoilerify (<! (query-channel-fn offset)))
+              results-count (count results)]
+          (if (= results-count number-of-fields)
+            (do (swap! app-state #(assoc % :board (merge-board-with-data board results)))
+                (callback))
+            (reagent-modals/modal! (modals/invalid-number-of-results number-of-fields results-count)))))))
 
 (defmethod load-board-data :gdrive
   [board callback]
