@@ -167,9 +167,10 @@
                  spreadsheet-id "/" worksheet-id "/public/full")
         transform-row (fn [{{label :$t} :gsx$label
                            {description :$t} :gsx$description}]
-                            {:label label
-                             :abbreviation (abbreviate label)
-                             :description description})
+                        (when (and label description)
+                          {:label label
+                           :abbreviation (abbreviate label)
+                           :description description}))
         raw-results-chan (wrap-load (http/jsonp url {:query-params {:alt "json-in-script"}})
                                 (chan 1 (map (comp (partial map transform-row) :entry :feed :body))))
         results-chan (chan)]
@@ -178,6 +179,8 @@
                     results-count (count results)]
                 (cond (< results-count number-of-fields)
                         (reagent-modals/modal! (modals/invalid-spreadsheet-rows results-count))
+                      (every? nil? results)
+                        (reagent-modals/modal! modals/invalid-spreadsheet-columns)
                       ; TODO: More validation rules
                       :else (>! results-chan (take number-of-fields (shuffle results))))))
           results-chan)
@@ -238,14 +241,15 @@
                                          :data {:selectors selectors
                                                 :limit number-of-fields
                                                 :offset offset}))]
-    (go (let [count-result (js/parseInt (:count (first (<! count-query-channel))) 10)
-              offset (count-to-offset count-result)
-              results (map despoilerify (<! (query-channel-fn offset)))
-              results-count (count results)]
-          (if (= results-count number-of-fields)
-            (do (swap! app-state #(assoc % :board (merge-board-with-data board results)))
-                (callback))
-            (reagent-modals/modal! (modals/invalid-number-of-results number-of-fields results-count)))))))
+    (go (if-let [count-result (:count (first (<! count-query-channel)))]
+          (let [offset (count-to-offset (js/parseInt count-result 10))
+                results (map despoilerify (<! (query-channel-fn offset)))
+                results-count (count results)]
+            (if (= results-count number-of-fields)
+              (do (swap! app-state #(assoc % :board (merge-board-with-data board results)))
+                  (callback))
+              (reagent-modals/modal! (modals/invalid-number-of-results number-of-fields results-count))))
+          (reagent-modals/modal! (modals/error-loading-data endpoint))))))
 
 (defmethod load-board-data :gdrive
   [board callback]
