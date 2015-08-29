@@ -75,8 +75,10 @@ a:hover {
   color: inherit;
 }
 
-.tab-content {
-  padding-top: 1em;
+#advanced .tab-content {
+  padding: 1em 0 .5em 0;
+  border-bottom: 1px solid #ddd; 
+  margin-bottom: 1em;
 }
 
 .player-field label:before {
@@ -230,12 +232,9 @@ a:hover {
   cursor: pointer;
   display: inline-block;
   margin: 6px;
-  -webkit-border-radius: 8px;
-  -moz-border-radius: 8px;
-  border-radius: 8px;
-  -webkit-box-shadow: 0 8px 0 #a5a8a8, 0 15px 20px rgba(0, 0, 0, .35);
-  -moz-box-shadow: 0 8px 0 #a5a8a8, 0 15px 20px rgba(0, 0, 0, .35);
-  box-shadow: 0 8px 0 #a5a8a8, 0 15px 20px rgba(0, 0, 0, .35);
+  -webkit-box-shadow: 0 8px 0 #a5a8a8, 0 15px 20px rgba(0, 0, 0, .2);
+  -moz-box-shadow: 0 8px 0 #a5a8a8, 0 15px 20px rgba(0, 0, 0, .2);
+  box-shadow: 0 8px 0 #a5a8a8, 0 15px 20px rgba(0, 0, 0, .2);
   -webkit-transition: -webkit-box-shadow .1s ease-in-out;
   -moz-transition: -moz-box-shadow .1s ease-in-out;
   -o-transition: -o-box-shadow .1s ease-in-out;
@@ -252,9 +251,6 @@ a:hover {
   background-image: -webkit-linear-gradient(hsla(0, 0%, 80%, .8), hsla(0, 0%, 70%, .2));
   background-image: -moz-linear-gradient(hsla(0, 0%, 80%, .8), hsla(0, 0%, 70%, .2));
   background-image: -o-linear-gradient(hsla(0, 0%, 80%, .8), hsla(0, 0%, 70%, .2));
-  -webkit-border-radius: 8px;
-  -moz-border-radius: 8px;
-  border-radius: 8px;
   -webkit-box-shadow: inset 0 -1px 1px rgba(255, 255, 255, .15);
   -moz-box-shadow: inset 0 -1px 1px rgba(255, 255, 255, .15);
   box-shadow: inset 0 -1px 1px rgba(255, 255, 255, .15);
@@ -359,6 +355,11 @@ td {
 
 .glyphicon-end {
   margin-left: 4px;
+}
+
+#winner h1 {
+  font-size: 4em;
+  margin: .66em;
 }
 
 #winner .player-1 {
