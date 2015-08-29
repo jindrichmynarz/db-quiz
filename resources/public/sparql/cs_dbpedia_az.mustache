@@ -72,6 +72,5 @@ WHERE {
       BIND (IF(STRSTARTS(?_label, "Ch"), "Ch", UCASE(?_firstLetter)) AS ?firstLetter) 
     }
     GROUP BY ?firstLetter
-    ORDER BY ASC(?firstLetter)
   }
 }
