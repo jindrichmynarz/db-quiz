@@ -2,7 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [db-quiz.state :refer [app-state]]
             [db-quiz.config :refer [config]]
-            [db-quiz.normalize :refer [remove-punctuation replace-diacritics]]
+            [db-quiz.normalize :refer [generate-hint remove-punctuation replace-diacritics]]
             [db-quiz.util :refer [listen number-of-fields redirect toggle]]
             [cljs.core.async :refer [alts! close! chan put! timeout]]
             [clojure.string :as string]
@@ -127,6 +127,11 @@
   [app-state]
   (dissoc app-state :answer))
 
+(defn clear-hint
+  "Clear currently provided hint"
+  [app-state]
+  (dissoc app-state :hint))
+
 (defn deselect-current-field
   "Currently selected field is cleared."
   [app-state]
@@ -182,7 +187,7 @@
     (go (swap! app-state mark-fn)
         (alts! [keypresses (timeout verdict-display-time)])
         (close! keypresses)
-        (swap! app-state (comp restart-timer toggle-player clear-answer
+        (swap! app-state (comp restart-timer toggle-player clear-hint clear-answer
                                deselect-current-field unmatch-answer))))) 
 
 (defn make-a-guess
@@ -216,13 +221,16 @@
 (defonce timeout-updater
   (js/setInterval (fn []
                     (let [{{:keys [completion start]} :timer
-                           :keys [current-field verdict]} @app-state
-                          time-to-guess (:time-to-guess config)]
+                            :keys [answer board current-field hint verdict]} @app-state
+                          time-to-guess (:time-to-guess config)
+                          correct-answer (get-in board [current-field :label])]
                       (when (and current-field (nil? verdict))
                         (if (< completion 100)
-                          (swap! app-state #(assoc-in %
-                                                      [:timer :completion]
-                                                      (/ (- (.getTime (js/Date.)) start)
-                                                         (* 10 time-to-guess))))
+                          (do (swap! app-state #(assoc-in %
+                                                          [:timer :completion]
+                                                          (/ (- (.getTime (js/Date.)) start)
+                                                              (* 10 time-to-guess))))
+                              (when (and (nil? hint) (> completion 50) (nil? answer))
+                                (swap! app-state #(assoc % :hint (generate-hint correct-answer)))))
                           (make-a-guess)))))
                   1000))

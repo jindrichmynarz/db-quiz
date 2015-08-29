@@ -13,6 +13,12 @@
             [reagent-forms.core :refer [bind-fields]]
             [reagent-modals.modals :as reagent-modals]))
 
+(defn check-if-online
+  "If browser is offline, show a warning modal.
+  Warning: This is unreliable, since browsers implement it inconsistently."
+  []
+  (when-not js/navigator.onLine (reagent-modals/modal! modals/offline)))
+
 (defn parse-hash
   "Parse 'query parameters' from hash fragment in the URL.
   For example '#?doc=1234' is parsed to {:doc \"1234\"}."
@@ -50,16 +56,36 @@
 (defn set-defaults!
   "Set default options on load."
   []
-  (set-hash-options!)
-  (set-language!))
+  (check-if-online)
+  (set-hash-options!))
+
+(defn validate-options
+  []
+  (let [{{:keys [data-source difficulty doc
+                 labels selectors]} :options
+         {:keys [player-1 player-2]} :players} @app-state
+        name-errors [(when (empty? player-1) "Chybí jméno hráče 1.")
+                     (when (empty? player-2) "Chybí jméno hráče 2.")]
+        data-errors (case data-source
+                      :dbpedia [(when-not (pos? (count selectors)) "Alespoň 1 druh otázek musí být zvolen.")
+                                (when-not difficulty "Musí být zvolena obtížnost.")
+                                (when-not labels "Musí být zvolen způsob označování políček.")]
+                      :gdrive [(when (empty? doc) "URL Google Spreadsheetu nesmí být prázdné.")])
+        errors (concat name-errors data-errors)]
+    {:valid? (every? nil? errors)
+     :errors (remove nil? errors)}))
 
 ; ----- Common components -----
 
-(def info-button
-  [:button#info-button.btn.btn-default {:on-click #(reagent-modals/modal! modals/game-info
-                                                                          {:size :lg})}
-   [:span.glyphicon.glyphicon-info-sign.glyphicon-start]
-   "O hře"])
+(def menu
+  [:div#info-menu.btn-group {:role "group"}
+   [:a.btn.btn-default {:href "/"}
+    [:span.glyphicon.glyphicon-home.glyphicon-start]
+    "Domů"]
+   [:button.btn.btn-default {:on-click #(reagent-modals/modal! modals/game-info
+                                                                           {:size :lg})}
+    [:span.glyphicon.glyphicon-info-sign.glyphicon-start]
+    "O hře"]])
 
 (defn label-element
   "Label with text for input identified with for-id"
@@ -113,10 +139,11 @@
     [:div {:class (join-by-space "form-group" "player-field" id)}
      [label-element local-id label] 
      [:div.col-sm-8
-      [:input.form-control {:field :text :id local-id :max-length 20 :type "text"}]
-      [:div.alert.alert-danger
-       {:field :alert :id local-id :event empty?}
-       "Jméno hráče musí být vyplněno!"]]]))
+      [:input.form-control {:field :text
+                            :id local-id
+                            :max-length 20
+                            :placeholder "Jméno hráče"
+                            :type "text"}]]]))
 
 (def google-spreadsheet-url
   "Input for URL of a Google Spreadsheet to load data from"
@@ -158,24 +185,36 @@
 (def class-picker
   (multi-select "options.selectors"
                 "Druhy otázek"
-                {:label "Osoby" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                                        :o "http://dbpedia.org/ontology/Person"}}
-                {:label "Místa" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                                        :o "http://dbpedia.org/ontology/Place"}}
-                {:label "Díla" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                                       :o "http://dbpedia.org/ontology/Work"}}
-                {:label "Lidé z Brna" :value {:p "http://purl.org/dc/terms/subject"
-                                              :o "http://cs.dbpedia.org/resource/Kategorie:Narození_v_Brně"}}
-                {:label "Členové KSČ" :value {:p "http://purl.org/dc/terms/subject"
-                                              :o "http://cs.dbpedia.org/resource/Kategorie:Členové_KSČ"}}
-                {:label "Umělci" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                                         :o "http://dbpedia.org/ontology/Artist"}}
-                {:label "Politici" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                                           :o "http://dbpedia.org/ontology/Politician"}}
-                {:label "Hudebníci" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                                            :o "http://dbpedia.org/ontology/MusicalArtist"}}
-                {:label "Filmy" :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                                        :o "http://dbpedia.org/ontology/Film"}}))
+                {:label "Osoby"
+                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                         :o "http://dbpedia.org/ontology/Person"}}
+                {:label "Místa"
+                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                         :o "http://dbpedia.org/ontology/Place"}}
+                {:label "Díla"
+                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                         :o "http://dbpedia.org/ontology/Work"}}
+                {:label "Narození v Brně"
+                 :value {:p "http://purl.org/dc/terms/subject"
+                         :o "http://cs.dbpedia.org/resource/Kategorie:Narození_v_Brně"}}
+                {:label "Členové KSČ"
+                 :value {:p "http://purl.org/dc/terms/subject"
+                         :o "http://cs.dbpedia.org/resource/Kategorie:Členové_KSČ"}}
+                {:label "Osoby s nejistým datem úmrtí"
+                 :value {:p "http://purl.org/dc/terms/subject"
+                         :o "http://cs.dbpedia.org/resource/Kategorie:Osoby_s_nejistým_datem_úmrtí"}}
+                {:label "Umělci"
+                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                         :o "http://dbpedia.org/ontology/Artist"}}
+                {:label "Politici"
+                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                         :o "http://dbpedia.org/ontology/Politician"}}
+                {:label "Hudebníci"
+                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                         :o "http://dbpedia.org/ontology/MusicalArtist"}}
+                {:label "Filmy"
+                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                         :o "http://dbpedia.org/ontology/Film"}}))
 
 (def google-spreadsheet-options
   [:div google-spreadsheet-url
@@ -223,7 +262,6 @@
 
 (def basic-options
   [:div
-   language-picker
    (player-form-field "player-1" "1. hráč")
    (player-form-field "player-2" "2. hráč")])
 
@@ -248,16 +286,19 @@
            "Pokročilé nastavení"]]
          (when-not @options-hidden
            [advanced-options])]
-        [:a.button {:on-click #(; TODO: Validate options
-                                model/load-board-data (init-board)
-                                                      (partial redirect "#play"))}
+        [:a.button {:on-click (fn [e]
+                                (let [{:keys [valid? errors]} (validate-options)]
+                                  (if valid?
+                                    (model/load-board-data (init-board)
+                                                           (partial redirect "#play"))
+                                    (reagent-modals/modal! (modals/invalid-options errors)))))}
          [:span "Hrát"]]]])))
 
 (defn home-page
   []
   [:div.container-fluid
    [loading-indicator]
-   info-button
+   menu
    [:div#logo [:img {:alt "DB quiz logo"
                      :src "/img/logo.svg"}]]
    [start-menu]
@@ -265,17 +306,19 @@
 
 ; ----- Play page -----
 
-(def guess
-  [:input.form-control {:autoFocus "autoFocus"
-                        :field :text
-                        :id :answer
-                        :on-key-down (fn [e]
-                                       ; Submit a guess by pressing Enter
-                                       (when (= (.-keyCode e) 13)
-                                         (make-a-guess)))
-                        :placeholder "Odpověď"
-                        :spellCheck "false"
-                        :type "text"}])
+(defn guess
+  []
+  (let [{:keys [hint]} @app-state]
+    [:input.form-control {:autoFocus "autoFocus"
+                          :id :answer
+                          :on-change (fn [e] (swap! app-state #(assoc % :answer (.-value (.-target e)))))
+                          :on-key-down (fn [e]
+                                         ; Submit a guess by pressing Enter
+                                         (when (= (.-keyCode e) 13)
+                                           (make-a-guess)))
+                          :placeholder (or hint "Odpověď") 
+                          :spellCheck "false"
+                          :type "text"}]))
 
 (defn timeout
   "Progress bar showing the ellapsed time from player's turn."
@@ -381,7 +424,8 @@
       [:div.row
         [:div.col-sm-12
           [:div.input-group
-            [bind-fields guess app-state]
+            [guess]
+            ;[bind-fields guess app-state]
             [:span.input-group-btn
              [:button.btn.btn-primary
               {:on-click make-a-guess
@@ -444,16 +488,40 @@
     (if (empty? board)
       (redirect "/") ; If no data is loaded, redirect to home page. TODO: Can we redirect to root?
       [:div.container-fluid
-       info-button
+       menu
        [:div.row
         [:div.col-sm-6 [hex-triangle]]
         [:div#question-box.col-sm-6
          [player-on-turn]
          (when current-field
            [question-box current-field])]]
-       [reagent-modals/modal-window]])))
+       [reagent-modals/modal-window]]))) 
 
 ; ----- End page -----
+
+(defn winners-cup
+  "Winner's cup coloured with the colour of the winning player."
+  [colour]
+  [:svg {:width 250 :height 250}
+    [:defs
+     [:linearGradient
+       {:id "cup-gradient"
+        :x1 0 :y1 0
+        :x2 177.79153 :y2 96.346634
+        :gradientUnits "userSpaceOnUse"}
+       [:stop {:offset 0
+              :style {:stop-color colour
+                      :stop-opacity 0}}]
+       [:stop {:offset 1
+              :style {:stop-color colour
+                      :stop-opacity 1}}]]]
+   [:g 
+    [:path {:style {:fill "url(#cup-gradient)"}
+            :d "m 23.094464,-2e-5 23.522065,57.01846 -12.801831,22.16903 45.725784,79.20482 8.89883,0 9.488616,23.019 15.351792,0 0,35.95961 0.0694,0 -33.773938,16.3058 0.50306,16.3233 90.688298,0 0.15613,-16.3233 -33.75659,-16.3058 0.0693,0 0,-35.95961 15.21301,0 9.50598,-23.019 9.03761,0 L 216.70041,79.18747 203.88122,56.9664 227.42063,-2e-5 l -56.42865,0 -91.451568,0 -56.446015,0 z m 175.981796,68.58867 6.12336,10.59882 -36.9657,64.04383 30.84234,-74.64265 z m -147.654708,0.0694 30.44338,73.81003 -36.532055,-63.28059 6.088675,-10.52944 z"
+            :id "cup"}]
+    [:path {:style {:fill "#ffffff"}
+            :d "M 34.526818,-51.55751 52.996969,21.61337 -3.3828659,-29.67722 47.907724,26.68531 -25.263158,8.21516 47.336482,28.79717 -25.263158,51.97574 49.223311,35.73862 -3.3828669,89.86811 50.746623,37.26193 34.526818,111.7484 57.688076,39.14876 78.270092,111.7484 59.79994,38.56021 116.17977,89.86811 64.889185,33.48828 138.04275,51.97574 65.443117,31.39373 138.04275,8.21516 63.573598,24.43496 116.17977,-29.67722 62.050286,22.91165 78.270092,-51.55751 55.091523,21.04213 34.526818,-51.55751 z"
+            :id "shine"}]]])
 
 (defn end-page
   []
@@ -462,8 +530,10 @@
          :keys [players]} @app-state
         winner-name (players player)]
     [:div
-     (when winner
+     (if winner
        [:div#winner
-        [:p "Vítězem se stává"]
-        [:h1 {:class (name player)} winner-name]])
+        [winners-cup (get-in config [:colours player])]
+        [:h3 "Vítězem se stává"]
+        [:h1 {:class (name player)} winner-name]]
+       [:h1 "Kdo nehraje, nevyhraje."])
      [:a.button {:href (or share-url "")} [:span "Hrát znovu"]]]))
