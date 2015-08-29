@@ -28,8 +28,8 @@
       [:a {:href "https://cs.wikipedia.org/wiki/AZ-kv%C3%ADz"} "AZ-kvíz"]
       ". Jejím cílem je obsadit pole souvisle spojující všechny 3 strany hrací plochy. Hráč získá pole v případě, kdy správně zodpoví položenou otázku. Každá otázka obsahuje popis hádané věci a zkratku jejího názvu. Pokud je otázka pro zvolené pole zodpovězena nesprávně, pole je označeno jako neuhodnuté a jakýkoli hráč na tahu ho může získat bez nutnosti zodpovídání otázky. Na zodpovězení otázky má každý hráč 45 sekund. První hráč, který svými poli souvisle propojí všechny 3 strany hrací plochy, se stává vítězem. Začíná náhodně vylosovaný hráč."]
      [:h2 "Jak hra funguje?"]
-     [:p "V případě DB-quizu jsou herní otázky náhodně generovány na základě databáze. Ve hře je jako databáze použita sémantická podoba české Wikipedia zvaná "
-      [:a {:href "http://cs.dbpedia.org/"} "DBpedia"]
+     [:p "V případě DB-quizu jsou herní otázky náhodně generovány na základě databáze. Ve hře je jako databáze použita sémantická podoba české Wikipedia, která je vytvářena v projektu "
+      [:a {:href "http://dbpedia.org/"} "DBpedia"]
       ". Alternativně lze použít otázky z tabulek v Google Spreadsheets."]
      [:p "Hru dal dohromady "
       [:a {:href "http://mynarz.net/#jindrich"} "Jindřich Mynarz"]
