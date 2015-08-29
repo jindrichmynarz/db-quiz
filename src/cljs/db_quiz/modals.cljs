@@ -43,7 +43,7 @@
   (modal
     [:div 
      [:h2 "Jak má tabulka vypadat?"]
-     [:p "Tabulka musí mít 2 sloupce, záhlaví a alespoň tolik řádků, kolik je hracích políček. Název prvního sloupce je 'Label', druhý sloupec je pojmenován 'Description'. V prvním sloupci jsou názvy hádaných věcí, zatímco v druhém sloupci je otázka popisující hádanou věc."]
+     [:p "Tabulka musí mít 2 sloupce, záhlaví a alespoň tolik řádků, kolik je hracích políček. Ve sloupci pojmenovaném 'Label' jsou názvy hádaných věcí, zatímco ve sloupci se jménem 'Description' jsou otázky popisující hádanou věc."]
      [:h2 "Jak tabulku publikovat?"]
      [:p "Zvolte 'File' \u2192 'Publish to the web...' \u2192 'Publish'."]]))
 
@@ -63,6 +63,9 @@
            "Chyby v nastavení"]
           [:ul (for [error errors]
                  [:li {:key error} error])]]))
+
+(def invalid-spreadsheet-columns
+  (modal [:div "Sloupce v tabulce nejsou správně pojmenovány. Sloupec s hádanou věcí musí nést jméno 'Label', zatímco sloupec s otázkou je pojmenován 'Description'."]))
 
 (defn invalid-spreadsheet-rows
   [actual]
