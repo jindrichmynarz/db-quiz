@@ -1,8 +1,6 @@
 (ns db-quiz.core
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [db-quiz.config :refer [config]]
-            [db-quiz.model :as model]
-            [db-quiz.components :as components]
+  (:require [db-quiz.components :as components]
             [reagent.core :as reagent]
             [reagent.session :as session]
             [secretary.core :as secretary :refer-macros [defroute]]
@@ -11,7 +9,7 @@
   (:import goog.History))
 
 (enable-console-print!)
-; (.initializeTouchEvents js/React true)
+(.initializeTouchEvents js/React true)
 
 ;; -------------------------
 ;; Views
