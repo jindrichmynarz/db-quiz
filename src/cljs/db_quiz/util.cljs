@@ -2,7 +2,8 @@
   (:require [db-quiz.config :refer [config]]
             [clojure.string :as string]
             [cljs.core.async :refer [chan put!]]
-            [goog.events :as events]))
+            [goog.events :as events]
+            [cljsjs.mustache :as mustache]))
 
 (defn join-by-space
   "Join arguments by space"
@@ -30,6 +31,11 @@
   "Redirect to URL"
   [url]
   (set! (.-location js/window) url))
+
+(defn render-template
+  "Render Mustache template with data."
+  [template & {:keys [data]}]
+  (.render js/Mustache template (clj->js data)))
 
 (defn toggle
   "Toggle between 2 values given the current value"

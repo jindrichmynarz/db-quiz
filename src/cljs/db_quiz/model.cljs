@@ -1,15 +1,14 @@
 (ns db-quiz.model
   (:refer-clojure :exclude [replace])
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [db-quiz.config :refer [config]]
             [db-quiz.state :refer [app-state]]
             [db-quiz.modals :as modals]
-            [db-quiz.util :refer [number-of-fields]]
+            [db-quiz.util :refer [number-of-fields render-template]]
             [db-quiz.normalize :as normalize]
             [cljs-http.client :as http]
-            [cljs.core.async :refer [<! >! chan pipe]]
-            [clojure.string :refer [join lower-case replace split trim]]
-            [cljsjs.mustache :as mustache]
+            [cljs.core.async :refer [<! >! chan]]
+            [clojure.string :refer [replace split]]
             [reagent-modals.modals :as reagent-modals]))
 
 ; ----- Public functions -----
@@ -29,98 +28,6 @@
                               :format "application/sparql-results+json"
                               :query query
                               :timeout 60000}}))
-
-(defn render-template
-  "Render Mustache template with data."
-  [template & {:keys [data]}]
-  (.render js/Mustache template (clj->js data)))
-
-(defn delete-parenthesized-parts
-  [text]
-  (-> text
-      (replace #"\s*\([^)]+\)" "")
-      (replace #"\s*\[[^\]]+\]" "")))
-
-(defn collapse-whitespace
-  "Replace consecutive whitespace characters with a single space."
-  [s]
-  (replace s #"\s{2,}" " "))
-
-(def clear-description
-  "Cleaning of descriptions"
-  (comp normalize/space-sentences collapse-whitespace))
-
-(defn truncate-description
-  "Truncate description to the configured maximum length.
-  Cuts the description on a complete sentence."
-  [description]
-  (let [maximum-length (:max-question-length config)]
-    (cond (> (count description) maximum-length)
-          (reduce (fn [a b]
-                    (if (> (count a) maximum-length)
-                        a
-                        (str a ". " b)))
-                  (split description #"\.\s+"))
-          :else description)))
-
-(def clear-label
-  (comp trim delete-parenthesized-parts))
-
-(defn clear-tokens
-  "Filter out roman numerals"
-  [tokens]
-  (filter (fn [token]
-            (not (re-matches #"^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})\.?$" token)))
-          tokens))
-
-(defn tokenize
-  "Split s into tokens delimited by whitespace."
-  [s]
-  (split s #"\s+|-"))
-
-(defn abbreviate-tokens
-  "Convert tokens into an abbreviation."
-  [tokens]
-  (apply str (map (fn [s] (if (zero? (.indexOf (lower-case s) "ch")) "Ch" (first s)))
-                  tokens)))
-
-(def abbreviate
-  (comp abbreviate-tokens clear-tokens tokenize clear-label))
-
-(defn replace-surface-forms
-  "Replace a set of surface-forms appearing in description with abbreviation."
-  [description abbreviation surface-forms]
-  (loop [[surface-form & the-rest] surface-forms
-         result description]
-    (let [clean-result (replace result surface-form abbreviation)]
-      (if-not the-rest
-        clean-result
-        (recur the-rest clean-result)))))
-
-(defn clean-surface-form?
-  "Predicate that validates a surface-form."
-  [surface-form]
-  ;(not (re-matches #"\s+" surface-form))
-  true)
-
-(defn despoilerify
-  "Replace spoilers suggesting label from description"
-  [{:keys [label description surfaceForms] :as item}]
-  (let [clean-label (clear-label label)
-        tokens (clear-tokens (tokenize clean-label))
-        abbreviation (abbreviate-tokens tokens)
-        ; Sort surface forms from the longest to the shortest, so that we first replace
-        ; the longer matches. 
-        surface-forms (sort-by (comp - count)
-                               (conj (split surfaceForms "|") clean-label label))]
-    (assoc item
-           :abbreviation abbreviation
-           :description (-> description
-                            delete-parenthesized-parts
-                            clear-description
-                            (replace-surface-forms abbreviation surface-forms)
-                            truncate-description)
-           :label (join " " tokens))))
 
 (defn wrap-load
   [input-channel output-channel]
@@ -169,7 +76,7 @@
                            {description :$t} :gsx$description}]
                         (when (and label description)
                           {:label label
-                           :abbreviation (abbreviate label)
+                           :abbreviation (normalize/abbreviate label)
                            :description description}))
         raw-results-chan (wrap-load (http/jsonp url {:query-params {:alt "json-in-script"}})
                                 (chan 1 (map (comp (partial map transform-row) :entry :feed :body))))
@@ -181,7 +88,6 @@
                         (reagent-modals/modal! (modals/invalid-spreadsheet-rows results-count))
                       (every? nil? results)
                         (reagent-modals/modal! modals/invalid-spreadsheet-columns)
-                      ; TODO: More validation rules
                       :else (>! results-chan (take number-of-fields (shuffle results))))))
           results-chan)
       (reagent-modals/modal! (modals/invalid-google-spreadsheet-url spreadsheet-url)))))
@@ -243,7 +149,7 @@
                                                 :offset offset}))]
     (go (if-let [count-result (:count (first (<! count-query-channel)))]
           (let [offset (count-to-offset (js/parseInt count-result 10))
-                results (map despoilerify (<! (query-channel-fn offset)))
+                results (map normalize/despoilerify (<! (query-channel-fn offset)))
                 results-count (count results)]
             (if (= results-count number-of-fields)
               (do (swap! app-state #(assoc % :board (merge-board-with-data board results)))
