@@ -79,7 +79,7 @@
 
 (def menu
   [:div#info-menu.btn-group {:role "group"}
-   [:a.btn.btn-default {:href "/"}
+   [:a.btn.btn-default {:href "#"}
     [:span.glyphicon.glyphicon-home.glyphicon-start]
     "Domů"]
    [:button.btn.btn-default {:on-click #(reagent-modals/modal! modals/game-info
@@ -300,7 +300,7 @@
    [loading-indicator]
    menu
    [:div#logo [:img {:alt "DB quiz logo"
-                     :src "/img/logo.svg"}]]
+                     :src "img/logo.svg"}]]
    [start-menu]
    [reagent-modals/modal-window]])
 
@@ -425,7 +425,6 @@
         [:div.col-sm-12
           [:div.input-group
             [guess]
-            ;[bind-fields guess app-state]
             [:span.input-group-btn
              [:button.btn.btn-primary
               {:on-click make-a-guess
@@ -486,7 +485,7 @@
   []
   (let [{:keys [board current-field]} @app-state]
     (if (empty? board)
-      (redirect "/") ; If no data is loaded, redirect to home page. TODO: Can we redirect to root?
+      (redirect "#") ; If no data is loaded, redirect to home page.
       [:div.container-fluid
        menu
        [:div.row
