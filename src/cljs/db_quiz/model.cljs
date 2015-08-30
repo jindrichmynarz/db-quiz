@@ -82,14 +82,14 @@
                                 (chan 1 (map (comp (partial map transform-row) :entry :feed :body))))
         results-chan (chan)]
     (if spreadsheet-id
-      (do (go (let [results (<! raw-results-chan)
+      (go (let [results (<! raw-results-chan)
                     results-count (count results)]
                 (cond (< results-count number-of-fields)
                         (reagent-modals/modal! (modals/invalid-spreadsheet-rows results-count))
                       (every? nil? results)
-                        (reagent-modals/modal! modals/invalid-spreadsheet-columns)
-                      :else (>! results-chan (take number-of-fields (shuffle results))))))
-          results-chan)
+                        (reagent-modals/modal! (modals/invalid-spreadsheet-columns))
+                      :else (>! results-chan (take number-of-fields (shuffle results))))
+                results-chan))
       (reagent-modals/modal! (modals/invalid-google-spreadsheet-url spreadsheet-url)))))
 
 (defmulti merge-board-with-data
@@ -126,7 +126,8 @@
         count-file "sparql/cs_dbpedia_count.mustache"
         query-file (case labels
                          :numeric "sparql/cs_dbpedia.mustache"
-                         :alphabetic "sparql/cs_dbpedia_az.mustache") 
+                         :alphabetic "sparql/cs_dbpedia_az.mustache")
+        selectors-data (map (:selectors config) selectors)
         ; Offset is generated from the total count of available instances.
         ; The count is split into thirds, in which random offset is generated
         ; to select a random subset of the third. First third is easy difficulty,
@@ -140,11 +141,11 @@
                                   :hard (+ (* third 2) offset))))
         count-query-channel (sparql-query endpoint
                                           count-file
-                                          :data {:selectors selectors})
+                                          :data {:selectors selectors-data})
         query-channel-fn (fn [offset]
                            (sparql-query endpoint
                                          query-file
-                                         :data {:selectors selectors
+                                         :data {:selectors selectors-data
                                                 :limit number-of-fields
                                                 :offset offset}))]
     (go (if-let [count-result (:count (first (<! count-query-channel)))]

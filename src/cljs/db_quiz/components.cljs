@@ -8,16 +8,28 @@
             [db-quiz.normalize :refer [trim-player-name]]
             [db-quiz.layout.svg :as svg] 
             [db-quiz.layout.canvas :as canvas]
+            [db-quiz.i18n :refer [t]]
             [clojure.string :as string]
+            [goog.net.Cookies]
             [reagent.core :refer [atom]]
-            [reagent-forms.core :refer [bind-fields]]
             [reagent-modals.modals :as reagent-modals]))
+
+(def cookies (goog.net.Cookies. js/document))
 
 (defn check-if-online
   "If browser is offline, show a warning modal.
   Warning: This is unreliable, since browsers implement it inconsistently."
   []
-  (when-not js/navigator.onLine (reagent-modals/modal! modals/offline)))
+  (when-not js/navigator.onLine (reagent-modals/modal! (modals/offline))))
+
+(defn generate-share-url
+  "Generate persistent game URL based on Google Spreadsheet at the given URL." 
+  [url] 
+  (let [location (.-location js/window)]
+    (str (.-origin location)
+         (.-pathname location)
+         "#?doc="
+         (js/encodeURIComponent url))))
 
 (defn parse-hash
   "Parse 'query parameters' from hash fragment in the URL.
@@ -44,83 +56,57 @@
                                #(assoc-in % [:options :share-url] (.-href location))))))))
 
 (defn set-language!
-  "Set preferred language based on the browser's settings.
+  "Set preferred language based on cookies and browser's settings.
   Only supports Czech and English with Czech as default."
   []
-  (let [language (case (.slice (.-language js/navigator) 0 2)
-                       "en" :english
-                       "cs" :czech
-                       :czech)]
-    (swap! app-state #(assoc-in % [:options :language] language))))
+  (let [language (if-let [language (.get cookies "language")]
+                   (keyword language)
+                   (case (.slice (.-language js/navigator) 0 2)
+                     "en" :en
+                     "cs" :cs
+                     :cs))]
+    (swap! app-state #(assoc % :language language))))
 
 (defn set-defaults!
   "Set default options on load."
   []
   (check-if-online)
-  (set-hash-options!))
+  (set-hash-options!)
+  (set-language!))
 
 (defn validate-options
   []
   (let [{{:keys [data-source difficulty doc
                  labels selectors]} :options
          {:keys [player-1 player-2]} :players} @app-state
-        name-errors [(when (empty? player-1) "Chybí jméno hráče 1.")
-                     (when (empty? player-2) "Chybí jméno hráče 2.")]
+        name-errors [(when (empty? player-1) (t :messages/player-1-missing))
+                     (when (empty? player-2) (t :messages/player-2-missing))]
         data-errors (case data-source
-                      :dbpedia [(when-not (pos? (count selectors)) "Alespoň 1 druh otázek musí být zvolen.")
-                                (when-not difficulty "Musí být zvolena obtížnost.")
-                                (when-not labels "Musí být zvolen způsob označování políček.")]
-                      :gdrive [(when (empty? doc) "URL Google Spreadsheetu nesmí být prázdné.")])
+                      :dbpedia [(when-not (pos? (count selectors)) (t :messages/no-domain-selected))
+                                (when-not difficulty (t :messages/no-difficulty-selected))
+                                (when-not labels (t :messages/no-field-labelling-selected))]
+                      :gdrive [(when (empty? doc) (t :messages/no-spreadsheet-url))])
         errors (concat name-errors data-errors)]
     {:valid? (every? nil? errors)
      :errors (remove nil? errors)}))
 
 ; ----- Common components -----
 
-(def menu
+(defn menu
+  []
   [:div#info-menu.btn-group {:role "group"}
    [:a.btn.btn-default {:href "#"}
     [:span.glyphicon.glyphicon-home.glyphicon-start]
-    "Domů"]
-   [:button.btn.btn-default {:on-click #(reagent-modals/modal! modals/game-info
+    (t :labels/home)]
+   [:button.btn.btn-default {:on-click #(reagent-modals/modal! (modals/game-info)
                                                                {:size :lg})}
     [:span.glyphicon.glyphicon-info-sign.glyphicon-start]
-    "O hře"]])
+    (t :labels/about)]])
 
 (defn label-element
   "Label with text for input identified with for-id"
   [for-id text]
   [:label.col-sm-4.control-label {:for for-id} text])
-
-(defn select-box
-  "Form select box.
-  If single? is true then only 1 value can be selected at a time.
-  Otherwise, multiple values can be selected.
-  id is a string identifier of the select's input.
-  label is used to label the input.
-  buttons are maps of [:label :value] pairs for the buttons in the select box.
-  Less than 3 buttons are presented in a row. More than 3 buttons are presented
-  vertically."
-  [single? id label & buttons]
-  {:pre [(= (type single?) js/Boolean)
-         (= (type id) js/String)]}
-  (let [btn-group-class (if (> (count buttons) 3)
-                          "btn-group-vertical"
-                          "btn-group")]
-    [:div.form-group
-     [label-element id label]
-     [:div {:class (join-by-space "col-sm-8" btn-group-class)
-            :field (if single? :single-select :multi-select)
-            :id (keyword id)
-            :role "group"}
-      (for [{:keys [value label]} buttons]
-        [:button.btn.btn-default {:key value} label])]]))
-
-(def single-select
-  (partial select-box true))
-
-(def multi-select
-  (partial select-box false))
 
 ; ----- Home page -----
 
@@ -130,100 +116,152 @@
   (when (:loading? @app-state)
     [:div#loading
      [:div#loadhex]
-     [:p.vcenter "Načítání..."]]))
+     [:p.vcenter (t :labels/loading) "..."]]))
 
 (defn player-form-field
   "Form field for player's name"
   [id label]
-  (let [local-id (keyword (str "players." id))]
-    [:div {:class (join-by-space "form-group" "player-field" id)}
+  (let [player-name (get-in @app-state [:players id])
+        local-id (keyword (str "players." (name id)))]
+    [:div {:class (join-by-space "form-group" "player-field" (name id))}
      [label-element local-id label] 
      [:div.col-sm-8
-      [:input.form-control {:field :text
-                            :id local-id
+      [:input.form-control {:id local-id
                             :max-length 20
-                            :placeholder "Jméno hráče"
-                            :type "text"}]]]))
+                            :on-change (fn [e]
+                                         (swap! app-state #(assoc-in % [:players id] (.. e -target -value))))
+                            :placeholder (t :home/player-name)
+                            :type "text"
+                            :value player-name}]]]))
 
-(def google-spreadsheet-url
+(defn google-spreadsheet-url
   "Input for URL of a Google Spreadsheet to load data from"
+  []
   [:div.form-group
    [:p [:label.control-label {:for "options.doc"} "Google Spreadsheet URL"]
-         [:a {:on-click #(reagent-modals/modal! modals/google-spreadsheet-help)}
+         [:a {:on-click #(reagent-modals/modal! (modals/google-spreadsheet-help))}
           [:span.glyphicon.glyphicon-question-sign.glyphicon-end]]]
    [:p
-    [:input.form-control {:field :text :id :options.doc :type "url"}]]])
+    [:input.form-control {:id :options.doc
+                          :on-change (fn [e]
+                                       (let [value (.. e -target -value)
+                                             update-fn (comp #(assoc-in % [:options :share-url]
+                                                                          (generate-share-url value))
+                                                             #(assoc-in % [:options :doc] value))]
+                                         (swap! app-state update-fn)))
+                          :type "url"}]]])
 
-(def share-url
+(defn share-url
   "URL of the game based on given Google Spreadsheet"
+  []
   [:div.form-group
-   [:p [:label.control-label {:for "options.share-url"} "URL hry"]]
-   [:p [:textarea.form-control {:field :text
-                                :id :options.share-url
+   [:p [:label.control-label {:for "options.share-url"} (t :home/game-url)]]
+   [:p [:textarea.form-control {:id :options.share-url
                                 :readOnly "readOnly"
-                                :rows 4}]]])
+                                :rows 4
+                                :value (get-in @app-state [:options :share-url])}]]])
 
-(def field-labelling
-  (single-select "options.labels"
-                 "Označování políček"
-                 {:label "0-9" :value :numeric}
-                 {:label "A-Z" :value :alphabetic}))
+(defn field-labelling
+  []
+  (let [id [:options :labels]
+        options [[:numeric "0-9"]
+                 [:alphabetic "A-Z"]]
+        click-fn (fn [e]
+                   (swap! app-state
+                          #(assoc-in % id (keyword (.. e -target -dataset -key)))))
+        btn-class-fn (partial join-by-space "btn" "btn-default")
+        button-fn (fn [current-id [id label]]
+                    [:button {:class (btn-class-fn (when (= id current-id) "active"))
+                              :data-key id
+                              :key id} 
+                     label])]
+    (fn []
+      (let [current (get-in @app-state id)]
+        [:div.form-group {:on-click click-fn}
+         [:label.col-sm-4.control-label (t :home/field-labelling)]
+         [:div.btn-group.col-sm-8 {:role "group"}
+          (doall (for [option options]
+                   (button-fn current option)))]]))))
 
-(def language-picker
-  (single-select "options.language"
-                 "Jazyk"
-                 {:label "Česky" :value :czech}
-                 {:label "English" :value :english}))
+(defn language-picker
+  []
+  (let [language (:language @app-state)
+        [cs-class en-class] (case language
+                                  :cs ["active" ""]
+                                  :en ["" "active"])
+        click-fn (fn [e]
+                   (let [language (.. e -target -dataset -key)]
+                     (swap! app-state #(assoc % :language (keyword language)))
+                     (.set cookies "language" language)))]
+    [:div.form-group {:on-click click-fn}
+     [:div.btn-group.col-sm-6.col-sm-offset-8 {:role "group"}
+      [:button {:class (join-by-space "btn" "btn-default" cs-class)
+                :data-key :cs}
+       "Česky"]
+      [:button {:class (join-by-space "btn" "btn-default" en-class)
+                :data-key :en}
+       "English"]]]))
 
-(def difficulty-picker
-  (single-select "options.difficulty"
-                 "Obtížnost"
-                 {:label "Jednoduchá" :value :easy}
-                 {:label "Běžná" :value :normal}
-                 {:label "Vysoká" :value :hard}))
+(defn difficulty-picker
+  []
+  (let [id [:options :difficulty]
+        click-fn (fn [e]
+                   (swap! app-state
+                          #(assoc-in % id (keyword (.. e -target -dataset -key)))))
+        btn-class-fn (partial join-by-space "btn" "btn-default")
+        options [[:easy :home.difficulty/easy]
+                 [:normal :home.difficulty/normal]
+                 [:hard :home.difficulty/hard]]
+        button-fn (fn [current-id [id translate-id]]
+                    [:button {:class (btn-class-fn (when (= id current-id) "active"))
+                              :data-key id
+                              :key id} 
+                     (t translate-id)])]
+    (fn []
+      (let [difficulty (get-in @app-state id)]
+        [:div.form-group {:on-click click-fn}
+         [:label.col-sm-4.control-label (t :home.difficulty/label)]
+         [:div.btn-group.col-sm-8 {:role "group"}
+          (doall (for [option options]
+                   (button-fn difficulty option)))]]))))
 
-(def selector-picker
-  (multi-select "options.selectors"
-                "Druhy otázek"
-                {:label "Osoby"
-                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                         :o "http://dbpedia.org/ontology/Person"}}
-                {:label "Místa"
-                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                         :o "http://dbpedia.org/ontology/Place"}}
-                {:label "Díla"
-                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                         :o "http://dbpedia.org/ontology/Work"}}
-                {:label "Narození v Brně"
-                 :value {:p "http://purl.org/dc/terms/subject"
-                         :o "http://cs.dbpedia.org/resource/Kategorie:Narození_v_Brně"}}
-                {:label "Členové KSČ"
-                 :value {:p "http://purl.org/dc/terms/subject"
-                         :o "http://cs.dbpedia.org/resource/Kategorie:Členové_KSČ"}}
-                {:label "Osoby s nejistým datem úmrtí"
-                 :value {:p "http://purl.org/dc/terms/subject"
-                         :o "http://cs.dbpedia.org/resource/Kategorie:Osoby_s_nejistým_datem_úmrtí"}}
-                {:label "Umělci"
-                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                         :o "http://dbpedia.org/ontology/Artist"}}
-                {:label "Politici"
-                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                         :o "http://dbpedia.org/ontology/Politician"}}
-                {:label "Hudebníci"
-                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                         :o "http://dbpedia.org/ontology/MusicalArtist"}}
-                {:label "Filmy"
-                 :value {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                         :o "http://dbpedia.org/ontology/Film"}}))
+(defn selector-picker
+  []
+  (let [active-selectors (get-in @app-state [:options :selectors])
+        selectors [[:persons (t :home.domains/persons)]
+                   [:places (t :home.domains/places)]
+                   [:works (t :home.domains/works)]
+                   [:born-in-brno (t :home.domains/born-in-brno)]
+                   [:ksc-members (t :home.domains/ksc-members)]
+                   [:uncertain-death (t :home.domains/uncertain-death)]
+                   [:artists (t :home.domains/artists)]
+                   [:politicians (t :home.domains/politicians)]
+                   [:musicians (t :home.domains/musicians)]
+                   [:films (t :home.domains/films)]]]
+        [:div.form-group
+         [label-element "options.selectors" (t :home.domains/label)]
+         [:div.col-sm-8.btn-group-vertical {:role "group"}
+          (for [[id label] selectors
+                :let [active? (active-selectors id)
+                      update-fn (if active? disj conj)]]
+            [:button {:class (join-by-space "btn" "btn-default" (when active? "active"))
+                      :key label
+                      :on-click (fn [_] (swap! app-state
+                                               (fn [state] (update-in state
+                                                                      [:options :selectors]
+                                                                      #(update-fn % id)))))}
+             label])]]))
 
-(def google-spreadsheet-options
-  [:div google-spreadsheet-url
-        share-url])
+(defn google-spreadsheet-options
+  []
+  [:div [google-spreadsheet-url]
+        [share-url]])
 
-(def dbpedia-options
-  [:div selector-picker
-        difficulty-picker
-        field-labelling])
+(defn dbpedia-options
+  []
+  [:div [selector-picker]
+        [difficulty-picker]
+        [field-labelling]])
 
 (def advanced-options
   (let [toggle-data-source (partial toggle [:dbpedia :gdrive])
@@ -231,39 +269,28 @@
                                                 #(update-in %
                                                             [:options :data-source]
                                                             toggle-data-source)))}
-        tab-pane-class (partial join-by-space "tab-pane")
-        generate-share-url (fn [url] 
-                             (let [location (.-location js/window)]
-                               (str (.-origin location)
-                                    (.-pathname location)
-                                    "#?doc="
-                                    (js/encodeURIComponent url))))]
+        tab-pane-class (partial join-by-space "tab-pane")]
     (fn []
       (let [[dbpedia-class gdrive-class] (case (get-in @app-state [:options :data-source])
                                                :dbpedia ["active" ""]
                                                :gdrive ["" "active"])]
         [:div
-         [:p "Zvolte zdroj otázek:"]
+         [:p (t :home/data-source)]
          [:ul.nav.nav-tabs 
           [:li {:class dbpedia-class} [:a click-handler "DBpedia"]]
           [:li {:class gdrive-class} [:a click-handler "Google Spreadsheet"]]]
          [:div.tab-content
           [:div {:class (tab-pane-class dbpedia-class)}
-            [bind-fields dbpedia-options app-state]]
+            [dbpedia-options]]
           [:div {:class (tab-pane-class gdrive-class)}
-            [bind-fields
-             google-spreadsheet-options
-             app-state
-             (fn [id value state]
-               (when (= (vec id) [:options :doc])
-                 (assoc-in state
-                           [:options :share-url]
-                           (generate-share-url value))))]]]]))))
+            [google-spreadsheet-options]]]]))))
 
-(def basic-options
+(defn basic-options
+  []
   [:div
-   (player-form-field "player-1" "1. hráč")
-   (player-form-field "player-2" "2. hráč")])
+   [language-picker]
+   [player-form-field :player-1 (t :home/player-1)]
+   [player-form-field :player-2 (t :home/player-2)]])
 
 (def start-menu
   (let [options-hidden (atom true)]
@@ -272,7 +299,7 @@
       (annull-game!)
       [:div.col-sm-6.col-sm-offset-3
        [:div#start-menu.form-horizontal
-        [bind-fields basic-options app-state]
+        [basic-options]
         [:div#advanced 
          [:h4
           [:a {:on-click (fn [e]
@@ -283,7 +310,7 @@
                                          (if @options-hidden
                                            "glyphicon-chevron-right"
                                            "glyphicon-chevron-down"))}]
-           "Pokročilé nastavení"]]
+           (t :home/advanced-options)]]
          (when-not @options-hidden
            [advanced-options])]
         [:a.button {:on-click (fn [e]
@@ -292,14 +319,14 @@
                                     (model/load-board-data (init-board)
                                                            (partial redirect "#play"))
                                     (reagent-modals/modal! (modals/invalid-options errors)))))}
-         [:span "Hrát"]]]])))
+         [:span (t :home/play)]]]])))
 
 (defn home-page
   []
   [:div.container-fluid
    [loading-indicator]
-   menu
-   [:div#logo [:img {:alt "DB quiz logo"
+   [menu]
+   [:div#logo [:img {:alt (t :labels/logo)
                      :src "img/logo.svg"}]]
    [start-menu]
    [reagent-modals/modal-window]])
@@ -317,7 +344,7 @@
                                          ; Submit a guess by pressing Enter
                                          (when (= (.-keyCode e) 13)
                                            (make-a-guess)))
-                          :placeholder (or hint "Odpověď") 
+                          :placeholder (or hint (t :play/answer)) 
                           :spellCheck "false"
                           :type "text"}]))
 
@@ -338,17 +365,17 @@
                 success
                 verdict-class]} (if verdict
                                   {:icon canvas/tick
-                                   :success "Ano"
+                                   :success (t :play.verdict/yes)
                                    :verdict-class "alert-success"}
                                   {:icon canvas/cross
-                                   :success "Ne"
+                                   :success (t :play.verdict/no) 
                                    :verdict-class "alert-danger"})]
     (when-not (nil? verdict)
       [:div#verdict.row
        [:div.col-sm-12
         [:p {:class (join-by-space "alert" verdict-class)}
          [icon]
-         success ". Správná odpověď je " [:strong correct-answer] "."]]])))
+         success ". " (t :play/correct-answer) " " [:strong correct-answer] "."]]])))
 
 (defn question-box
   "Box for presenting the question with given id."
@@ -366,15 +393,14 @@
             [guess]
             [:span.input-group-btn
              [:button.btn.btn-primary
-              {:on-click make-a-guess
-               :title "Odpovědět"}
-              [:span.glyphicon.glyphicon-ok]
-              " Odpovědět"]
+              {:on-click make-a-guess}
+              [:span.glyphicon.glyphicon-ok.glyphicon-start]
+              (t :play/guess)]
              [:button.btn.btn-danger
               {:on-click make-a-guess
-               :title "Nevim, dál!"}
-              [:span.glyphicon.glyphicon-forward]
-              " Dál"]]]]]
+               :title (t :play/skip-title)}
+              [:span.glyphicon.glyphicon-forward.glyphicon-start]
+              (t :play/skip)]]]]]
       [verdict-component]]))
 
 (defn player-on-turn
@@ -397,7 +423,7 @@
     (if (empty? board)
       (redirect "#") ; If no data is loaded, redirect to home page.
       [:div.container-fluid
-       menu
+       [menu]
        [:div.row
         [:div.col-sm-6 [svg/hex-triangle]]
         [:div#question-box.col-sm-6
@@ -418,7 +444,7 @@
      (if winner
        [:div#winner
         [svg/winners-cup (get-in config [:colours player])]
-        [:h3 "Vítězem se stává"]
+        [:h3 (t :end/winner)]
         [:h1 {:class (name player)} winner-name]]
-       [:h1 "Kdo nehraje, nevyhraje."])
-     [:a.button {:href (or share-url "")} [:span "Hrát znovu"]]]))
+       [:h1 (t :end/no-winner)])
+     [:a.button {:href (or share-url "")} [:span (t :end/play-again)]]]))

@@ -30,6 +30,27 @@
              "M" "N" "O" "P" "R" "Ř" "S" "Š" "T" "U" "V" "W" "Z" "Ž"]
    ; Maximum number of characters in a question
    :max-question-length 500
+   ; Selectors for filtering questions retrieved by SPARQL queries
+   :selectors {:persons {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                         :o "http://dbpedia.org/ontology/Person"}
+               :places {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                        :o "http://dbpedia.org/ontology/Place"}
+               :works {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                       :o "http://dbpedia.org/ontology/Work"}
+               :born-in-brno {:p "http://purl.org/dc/terms/subject"
+                              :o "http://cs.dbpedia.org/resource/Kategorie:Narození_v_Brně"}
+               :ksc-members {:p "http://purl.org/dc/terms/subject"
+                             :o "http://cs.dbpedia.org/resource/Kategorie:Členové_KSČ"}
+               :uncertain-death {:p "http://purl.org/dc/terms/subject"
+                                 :o "http://cs.dbpedia.org/resource/Kategorie:Osoby_s_nejistým_datem_úmrtí"}
+               :artists {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                         :o "http://dbpedia.org/ontology/Artist"}
+               :politicians {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                             :o "http://dbpedia.org/ontology/Politician"}
+               :musicians {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                           :o "http://dbpedia.org/ontology/MusicalArtist"}
+               :films {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                       :o "http://dbpedia.org/ontology/Film"}}
    ; Available time for making a guess (in seconds)
    :time-to-guess 45
    ; Time to display the correct answer (in seconds)

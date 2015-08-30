@@ -13,7 +13,6 @@
                  [cljsjs/react "0.13.3-1"]
                  [cljsjs/mustache "1.1.0-0"]
                  [reagent "0.5.0"]
-                 [reagent-forms "0.5.6"]
                  [reagent-utils "0.1.5"]
                  [ring "1.4.0"]
                  [ring/ring-defaults "0.1.5"]
@@ -25,7 +24,8 @@
                  [cljs-http "0.1.37"]
                  [secretary "1.2.3"]
                  [clj-fuzzy "0.3.1"]
-                 [org.clojars.frozenlock/reagent-modals "0.2.3"]]
+                 [org.clojars.frozenlock/reagent-modals "0.2.3"]
+                 [com.taoensso/tower "3.1.0-beta3"]]
 
   :plugins [[lein-environ "1.0.0"]
             [lein-asset-minifier "0.2.2"]]

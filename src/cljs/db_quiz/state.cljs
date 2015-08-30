@@ -6,19 +6,16 @@
          :board {}
          :current-field nil
          :hint nil
+         :language :cs
          :loading? false
          :on-turn (rand-nth [:player-1 :player-2])
          :options {:data-source :dbpedia
                    :difficulty :normal
                    :doc ""
                    :labels :numeric
-                   :language :czech
-                   :selectors [{:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                                :o "http://dbpedia.org/ontology/Person"}
-                               {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                                :o "http://dbpedia.org/ontology/Place"}
-                               {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                                :o "http://dbpedia.org/ontology/Work"}]
+                   :selectors #{:persons
+                                :places
+                                :works}
                    :share-url ""}
          :players {:player-1 "Dmitrij"
                    :player-2 "Paní M."}

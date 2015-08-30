@@ -9,12 +9,6 @@
   (apply str (map (fn [s] (if (zero? (.indexOf (lower-case s) "ch")) "Ch" (first s)))
                   tokens)))
 
-(defn clean-surface-form?
-  "Predicate that validates a surface-form."
-  [surface-form]
-  ;(not (re-matches #"\s+" surface-form))
-  true)
-
 (defn collapse-whitespace
   "Replace consecutive whitespace characters with a single space."
   [text]
