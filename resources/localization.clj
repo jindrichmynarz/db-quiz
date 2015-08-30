@@ -53,15 +53,11 @@ Tabulka musí mít 2 sloupce, záhlaví a alespoň tolik řádků, kolik je hrac
 ## Jak tabulku publikovat? ##
  
 Zvolte *File* → *Publish to the web...* a klikněte na *Publish*."
-               :invalid-number-of-results {:p1 "Načteno nesprávné množství dat. Hra potřebuje "
-                                           :p2 " položek, ale jen "
-                                           :p3 " bylo načteno. Zkuste rozšířit okruhy otázek."}
+               :invalid-number-of-results! "Načteno nesprávné množství dat. Hra potřebuje {{expected}} položek, ale jen {{actual}} bylo načteno. Zkuste rozšířit okruhy otázek."
                :invalid-options "Chyby v nastavení"
                :invalid-spreadsheet-columns "Sloupce v tabulce nejsou správně pojmenovány. Sloupec s hádanou věcí musí nést jméno 'Label', zatímco sloupec s otázkou je pojmenován 'Description'."
-               :invalid-spreadsheet-rows {:p1 "Nesprávný počet řádků v tabulce. Je třeba alespoň "
-                                          :p2 " řádků, ale tabulka má jen "
-                                          :p3 " řádků."}
-               :invalid-spreadsheet-url "Neplatné URL Google Spreadsheetu:"
+               :invalid-spreadsheet-rows! "Nesprávný počet řádků v tabulce. Je třeba alespoň {{number-of-fields}} řádků, ale tabulka má jen {{actual}} řádků."
+               :invalid-spreadsheet-url! "Neplatné URL Google Spreadsheetu: <{{url}}>"
                :offline-warning "Jste offline. Hra funguje pouze s připojením k internetu."
                :report-error! "<a href=\"https://github.com/jindrichmynarz/db-quiz/issues\">
   <span class=\"glyphicon glyphicon-exclamation-sign glyphicon-start\"></span> Nahlásit problém hry
@@ -128,15 +124,11 @@ A spreadsheet that can be used as a data source for DB-quiz needs to contain col
 ## How to publish the spreadsheet? ##
 
 The spreadsheet needs to be published before it can be read by DB-quiz. To do so, go to *File* → *Publish to the web...* and click *Publish*."
-               :invalid-number-of-results {:p1 "Insufficient amount of data was loaded. The game needs "
-                                           :p2 " questions, but only "
-                                           :p3 " was loaded. Try expanding the domain of questions."}
+               :invalid-number-of-results! "Insufficient amount of data was loaded. The game needs {{expected}} questions, but only {{actual}} were loaded. Try expanding the domain of questions."
                :invalid-options "Invalid options"
                :invalid-spreadsheet-columns "Columns in the spreadsheet are not named correctly. The column with things to guess must be named 'Label', while the column with questions must be named 'Description'."
-               :invalid-spreadsheet-rows {:p1 "The number of rows in the spreadsheet is invalid. The game requires at least "
-                                          :p2 " rows, but the spreadsheet contains only "
-                                          :p3 " rows"}
-               :invalid-spreadsheet-url "Invalid URL of a Google Spreadsheet:"
+               :invalid-spreadsheet-rows! "The number of rows in the spreadsheet is invalid. The game requires at least {{number-of-fields}} rows, but the spreadsheet contains only {{actual}} rows"
+               :invalid-spreadsheet-url! "Invalid URL of a Google Spreadsheet: <{{url}}>"
                :offline-warning "You are offline. The game works only with internet connection."
                :report-error! "<a href=\"https://github.com/jindrichmynarz/db-quiz/issues\">
   <span class=\"glyphicon glyphicon-exclamation-sign glyphicon-start\"></span> Report an error of the game

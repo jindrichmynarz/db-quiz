@@ -1,6 +1,7 @@
 (ns db-quiz.modals
   (:require [db-quiz.util :refer [number-of-fields]]
             [db-quiz.i18n :refer [t]]
+            [db-quiz.util :refer [render-template]]
             [reagent-modals.modals :refer [close-modal!]]))
 
 (def pos-number?
@@ -37,15 +38,14 @@
 
 (defn invalid-google-spreadsheet-url
   [url]
-  (modal [:div (t :modals/invalid-spreadsheet-url) " \"" url "\"."]))
+  (modal [:div (render-template (t :modals/invalid-spreadsheet-url)
+                                :data {:url url})]))
 
 (defn invalid-number-of-results
   [expected actual]
-  (modal [:div (t :modals.invalid-number-of-results/p1)
-               expected
-               (t :modals.invalid-number-of-results/p2)
-               actual
-               (t :modals.invalid-number-of-results/p3)]))
+  (modal [:div (render-template (t :modals/invalid-number-of-results)
+                                :data {:actual actual
+                                       :expected expected})]))
 
 (defn invalid-options
   [errors]
@@ -62,11 +62,9 @@
 (defn invalid-spreadsheet-rows
   [actual]
   {:pre [(pos-number? actual)]}
-  (modal [:div (t :modals.invalid-spreadsheet-rows/p1)
-               number-of-fields
-               (t :modals.invalid-spreadsheet-rows/p2)
-               actual
-               (t :modals.invalid-spreadsheet-rows/p3)]))
+  (modal [:div (render-template (t :modals/invalid-spreadsheet-rows)
+                                :data {:actual actual
+                                       :number-of-fields number-of-fields})]))
 
 (defn offline
   []
