@@ -83,7 +83,7 @@
     [:span.glyphicon.glyphicon-home.glyphicon-start]
     "Domů"]
    [:button.btn.btn-default {:on-click #(reagent-modals/modal! modals/game-info
-                                                                           {:size :lg})}
+                                                               {:size :lg})}
     [:span.glyphicon.glyphicon-info-sign.glyphicon-start]
     "O hře"]])
 
@@ -166,8 +166,8 @@
 (def field-labelling
   (single-select "options.labels"
                  "Označování políček"
-                {:label "0-9" :value :numeric}
-                {:label "A-Z" :value :alphabetic}))
+                 {:label "0-9" :value :numeric}
+                 {:label "A-Z" :value :alphabetic}))
 
 (def language-picker
   (single-select "options.language"
@@ -182,7 +182,7 @@
                  {:label "Běžná" :value :normal}
                  {:label "Vysoká" :value :hard}))
 
-(def class-picker
+(def selector-picker
   (multi-select "options.selectors"
                 "Druhy otázek"
                 {:label "Osoby"
@@ -221,7 +221,7 @@
         share-url])
 
 (def dbpedia-options
-  [:div class-picker
+  [:div selector-picker
         difficulty-picker
         field-labelling])
 
@@ -307,6 +307,7 @@
 ; ----- Play page -----
 
 (defn guess
+  "Input field for guesses"
   []
   (let [{:keys [hint]} @app-state]
     [:input.form-control {:autoFocus "autoFocus"
@@ -413,6 +414,7 @@
          success ". Správná odpověď je " [:strong correct-answer] "."]]])))
 
 (defn question-box
+  "Box for presenting the question with given id."
   [id]
   (let [{:keys [board]} @app-state
         {:keys [abbreviation description label]} (board id)]

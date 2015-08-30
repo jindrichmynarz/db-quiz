@@ -3,6 +3,7 @@
 (defonce config
   {; Number of hexagons on one side of the triangle
    :board-size 7
+   ; Colours of boards fields in various states
    :colours {:active "#eeeeee"
              :default "#bcbcbc"
              :hover "#dedede"
@@ -12,6 +13,7 @@
              :player-2 "#354d65"}
    :data {:sparql {; Maximum number of results per query
                    :page-size 5000}}
+   ; Similarity threshold required for the guess to match the correct answer
    :guess-similarity-threshold 0.94
    :layout {; Width of hexagon's border (in pixels)
             :border-width 1
@@ -23,6 +25,7 @@
             :inner-hex-offset 7
             ; Space between hexagons in % of their size
             :space 8}
+   ; Letters used to label fields in AZ-kvíz. Notice there is no "Y", for example.
    :letters ["A" "B" "C" "Č" "D" "E" "F" "G" "H" "Ch" "I" "J" "K" "L"
              "M" "N" "O" "P" "R" "Ř" "S" "Š" "T" "U" "V" "W" "Z" "Ž"]
    ; Maximum number of characters in a question
