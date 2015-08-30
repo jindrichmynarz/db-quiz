@@ -2,7 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [db-quiz.state :refer [app-state]]
             [db-quiz.config :refer [config]]
-            [db-quiz.normalize :refer [generate-hint remove-punctuation replace-diacritics]]
+            [db-quiz.normalize :refer [generate-hint normalize-answer]]
             [db-quiz.util :refer [listen number-of-fields redirect toggle]]
             [cljs.core.async :refer [alts! close! chan put! timeout]]
             [clojure.string :as string]
@@ -100,15 +100,6 @@
                             (sort-by get-ownership)
                             (partition-by get-ownership))]
     (some has-sides-connected? (filter has-all-sides? players-fields))))
-
-(defn normalize-answer
-  "Normalize answer to enable non-exact matching."
-  [answer]
-  (-> answer
-      replace-diacritics
-      remove-punctuation
-      string/lower-case
-      string/trim))
 
 (defn answer-matches?
   "Test if guess matches the exepcted answer using Jaro-Winkler's string distance.

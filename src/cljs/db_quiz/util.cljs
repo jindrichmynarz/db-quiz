@@ -37,6 +37,20 @@
   [template & {:keys [data]}]
   (.render js/Mustache template (clj->js data)))
 
+(defn shade-colour
+  "Shade hexadecimal RGB colour by percent.
+  Stolen from <http://stackoverflow.com/a/13542669/385505>."
+  [colour percent]
+  (let [fit-bounds (fn [n] (cond (< n 1) 0
+                                 (> n 255) 255
+                                 :else n))
+        numeric (js/parseInt (.slice colour 1) 16)
+        amount (.round js/Math (* 2.55 percent))
+        R (fit-bounds (+ (bit-shift-right numeric 16) amount))
+        G (fit-bounds (+ (bit-and (bit-shift-right numeric 8) 0x00FF) amount))
+        B (fit-bounds (+ (bit-and numeric 0x0000FF) amount))]
+    (str "#" (.slice (.toString (+ 0x1000000 (* R 0x10000) (* G 0x100) B) 16) 1))))
+
 (defn toggle
   "Toggle between 2 values given the current value"
   [[one two] value]

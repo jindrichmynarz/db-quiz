@@ -1,15 +1,15 @@
 (ns db-quiz.components
-  (:require [db-quiz.layout :refer [hex-triangle shade-colour]]
-            [db-quiz.logic :refer [annull-game! init-board make-a-guess]]
+  (:require [db-quiz.logic :refer [annull-game! init-board make-a-guess]]
             [db-quiz.model :as model] 
             [db-quiz.state :refer [app-state]]
-            [db-quiz.util :refer [join-by-space now redirect toggle]]
+            [db-quiz.util :refer [join-by-space redirect toggle]]
             [db-quiz.modals :as modals]
-            [db-quiz.geometry :as geo]
             [db-quiz.config :refer [config]]
             [db-quiz.normalize :refer [trim-player-name]]
+            [db-quiz.layout.svg :as svg] 
+            [db-quiz.layout.canvas :as canvas]
             [clojure.string :as string]
-            [reagent.core :as reagent :refer [atom]]
+            [reagent.core :refer [atom]]
             [reagent-forms.core :refer [bind-fields]]
             [reagent-modals.modals :as reagent-modals]))
 
@@ -329,69 +329,6 @@
    [:div#timeout-shade {:style {:margin-left (str completion "%")
                                 :width (str (- 100 completion) "%")}}]])
 
-(defn canvas-renderer
-  "Path is made of segments, i.e. [segment-1 segment-2].
-  Each segment is a vector of coordinates, i.e. [[x1 y1] [x2 y2]]."
-  [this [width height] relative-path & {:keys [animation-duration line-width stroke-colour]}]
-  (let [context (.getContext (reagent/dom-node this) "2d")
-        _ (set! (.-lineWidth context) (* width line-width))
-        _ (set! (.-strokeStyle context) stroke-colour)
-        path (geo/relative-to-absolute-coords [width height] relative-path)
-        total-distance (geo/path-length path)
-        step-length (/ total-distance animation-duration)
-        start-time (now)]
-    (fn render []
-      (.clearRect context 0 0 width height)
-      (let [distance-travelled (min (* step-length (- (now) start-time))
-                                    total-distance)
-            segments (geo/path-travelled path distance-travelled)]
-        (.beginPath context)
-        (doseq [[[start-x start-y] & tail] segments]
-          (.moveTo context start-x start-y)
-          (doseq [[x y] tail]
-            (.lineTo context x y))
-          (.stroke context)))
-      (reagent/next-tick render))))
-
-(defn canvas-element
-  "Create canvas element identified with id, or given width and height,
-  by drawing path in anitmation.
-  animation-duration is in seconds.
-  line-width is relative line width to width."
-  [id [width height] path & {:keys [animation-duration line-width stroke-colour]
-                             :or {animation-duration 0.5
-                                  line-width 0.1
-                                  stroke-colour "#000000"}}]
-  (reagent/create-class
-      {:component-did-mount (fn [this]
-                              (reagent/next-tick (canvas-renderer this
-                                                                  [width height]
-                                                                  path
-                                                                  :animation-duration animation-duration
-                                                                  :line-width line-width
-                                                                  :stroke-colour stroke-colour)))
-       :display-name id
-       :reagent-render (fn [] [:canvas {:width width :height height}])}))
-
-(defn tick-canvas
-  "Animation of a tick symbol."
-  []
-  (canvas-element "tick-canvas"
-                  [20 20]
-                  [[[0.2 0.6] [0.4 0.8] [0.8 0.4]]]
-                  :line-width 0.15
-                  :stroke-colour "#3C763D"))
-
-(defn cross-canvas
-  "Cross-mark animated on a canvas"
-  []
-  (canvas-element "cross-canvas"
-                  [15 15]
-                  [[[0.1 0.1] [0.9 0.9]]
-                   [[0.9 0.1] [0.1 0.9]]]
-                  :line-width 0.2
-                  :stroke-colour "#A94442"))
-
 (defn verdict-component
   "Show verdict if answer was correct or not."
   []
@@ -400,10 +337,10 @@
         {:keys [icon
                 success
                 verdict-class]} (if verdict
-                                  {:icon tick-canvas
+                                  {:icon canvas/tick
                                    :success "Ano"
                                    :verdict-class "alert-success"}
-                                  {:icon cross-canvas
+                                  {:icon canvas/cross
                                    :success "Ne"
                                    :verdict-class "alert-danger"})]
     (when-not (nil? verdict)
@@ -440,35 +377,6 @@
               " Dál"]]]]]
       [verdict-component]]))
 
-(defn easter-egg
-  "Easter egg that renders a symbol of fish."
-  [player]
-  (let [[width height] [40 20]]
-    (reagent/create-class
-      {:component-did-mount (fn [this]
-                              (let [context (.getContext (reagent/dom-node this) "2d")
-                                    _ (set! (.-fillStyle context)
-                                            (shade-colour (get-in config [:colours player]) -30))
-                                    relative-path [[[0 0.5] [0.2 0] [0.55 0] [0.8 0.45]]
-                                                   [[0.8 0.45] [1 0.2] [0.8 0.45] [1 0.2]]
-                                                   [[1 0.2] [0.93 0.5] [0.93 0.5] [1 0.8]]
-                                                   [[1 0.8] [0.8 0.55] [1 0.8] [0.8 0.55]]
-                                                   [[0.8 0.55] [0.55 1] [0.2 1] [0 0.5]]]
-                                    path (geo/relative-to-absolute-coords [width height]
-                                                                          relative-path)
-                                    [start-x start-y] (ffirst path)]
-                                (doto context
-                                  (.beginPath)
-                                  (.moveTo start-x start-y))
-                                (doseq [[_ [cp1x cp1y] [cp2x cp2y] [x y]] path]
-                                  (.bezierCurveTo context
-                                                  cp1x cp1y
-                                                  cp2x cp2y
-                                                  x y))
-                                (.fill context)))
-       :display-name "easter-egg"
-       :reagent-render (fn [] [:canvas#easter-egg {:width width :height height}])})))
-
 (defn player-on-turn
   "Show the name of the player, whose turn it currently is."
   []
@@ -480,7 +388,7 @@
       [:div.row
         [:div#on-turn {:class (join-by-space (name on-turn) font-class)}
           trimmed-name
-          (when (= player-name "Rybička") [easter-egg on-turn])]]
+          (when (= player-name "Rybička") [canvas/easter-egg on-turn])]]
       [timeout on-turn completion]]))
 
 (defn play-page
@@ -491,7 +399,7 @@
       [:div.container-fluid
        menu
        [:div.row
-        [:div.col-sm-6 [hex-triangle]]
+        [:div.col-sm-6 [svg/hex-triangle]]
         [:div#question-box.col-sm-6
          [player-on-turn]
          (when current-field
@@ -499,30 +407,6 @@
        [reagent-modals/modal-window]]))) 
 
 ; ----- End page -----
-
-(defn winners-cup
-  "Winner's cup coloured with the colour of the winning player."
-  [colour]
-  [:svg {:width 250 :height 250}
-    [:defs
-     [:linearGradient
-       {:id "cup-gradient"
-        :x1 0 :y1 0
-        :x2 177.79153 :y2 96.346634
-        :gradientUnits "userSpaceOnUse"}
-       [:stop {:offset 0
-              :style {:stop-color colour
-                      :stop-opacity 0}}]
-       [:stop {:offset 1
-              :style {:stop-color colour
-                      :stop-opacity 1}}]]]
-   [:g 
-    [:path {:style {:fill "url(#cup-gradient)"}
-            :d "m 23.094464,-2e-5 23.522065,57.01846 -12.801831,22.16903 45.725784,79.20482 8.89883,0 9.488616,23.019 15.351792,0 0,35.95961 0.0694,0 -33.773938,16.3058 0.50306,16.3233 90.688298,0 0.15613,-16.3233 -33.75659,-16.3058 0.0693,0 0,-35.95961 15.21301,0 9.50598,-23.019 9.03761,0 L 216.70041,79.18747 203.88122,56.9664 227.42063,-2e-5 l -56.42865,0 -91.451568,0 -56.446015,0 z m 175.981796,68.58867 6.12336,10.59882 -36.9657,64.04383 30.84234,-74.64265 z m -147.654708,0.0694 30.44338,73.81003 -36.532055,-63.28059 6.088675,-10.52944 z"
-            :id "cup"}]
-    [:path {:style {:fill "#ffffff"}
-            :d "M 34.526818,-51.55751 52.996969,21.61337 -3.3828659,-29.67722 47.907724,26.68531 -25.263158,8.21516 47.336482,28.79717 -25.263158,51.97574 49.223311,35.73862 -3.3828669,89.86811 50.746623,37.26193 34.526818,111.7484 57.688076,39.14876 78.270092,111.7484 59.79994,38.56021 116.17977,89.86811 64.889185,33.48828 138.04275,51.97574 65.443117,31.39373 138.04275,8.21516 63.573598,24.43496 116.17977,-29.67722 62.050286,22.91165 78.270092,-51.55751 55.091523,21.04213 34.526818,-51.55751 z"
-            :id "shine"}]]])
 
 (defn end-page
   []
@@ -533,7 +417,7 @@
     [:div
      (if winner
        [:div#winner
-        [winners-cup (get-in config [:colours player])]
+        [svg/winners-cup (get-in config [:colours player])]
         [:h3 "Vítězem se stává"]
         [:h1 {:class (name player)} winner-name]]
        [:h1 "Kdo nehraje, nevyhraje."])

@@ -1,23 +1,9 @@
-(ns db-quiz.layout
+(ns db-quiz.layout.svg
   (:require [db-quiz.config :refer [config]]
             [db-quiz.logic :as logic]
             [db-quiz.state :refer [app-state]]
-            [db-quiz.util :refer [join-by-space]]
+            [db-quiz.util :refer [join-by-space shade-colour]]
             [clojure.string :as string]))
-
-(defn shade-colour
-  "Shade hexadecimal RGB colour by percent.
-  Stolen from <http://stackoverflow.com/a/13542669/385505>."
-  [colour percent]
-  (let [fit-bounds (fn [n] (cond (< n 1) 0
-                                 (> n 255) 255
-                                 :else n))
-        numeric (js/parseInt (.slice colour 1) 16)
-        amount (.round js/Math (* 2.55 percent))
-        R (fit-bounds (+ (bit-shift-right numeric 16) amount))
-        G (fit-bounds (+ (bit-and (bit-shift-right numeric 8) 0x00FF) amount))
-        B (fit-bounds (+ (bit-and numeric 0x0000FF) amount))]
-    (str "#" (.slice (.toString (+ 0x1000000 (* R 0x10000) (* G 0x100) B) 16) 1))))
 
 (defn get-gradients
   "Generate SVG gradients for given status and colour."
@@ -120,3 +106,27 @@
                               :id [x y]
                               :size size)])
           (:board @app-state))])))
+
+(defn winners-cup
+  "Winner's cup coloured with the colour of the winning player."
+  [colour]
+  [:svg {:width 250 :height 250}
+    [:defs
+     [:linearGradient
+       {:id "cup-gradient"
+        :x1 0 :y1 0
+        :x2 177.79153 :y2 96.346634
+        :gradientUnits "userSpaceOnUse"}
+       [:stop {:offset 0
+              :style {:stop-color colour
+                      :stop-opacity 0}}]
+       [:stop {:offset 1
+              :style {:stop-color colour
+                      :stop-opacity 1}}]]]
+   [:g 
+    [:path {:style {:fill "url(#cup-gradient)"}
+            :d "m 23.094464,-2e-5 23.522065,57.01846 -12.801831,22.16903 45.725784,79.20482 8.89883,0 9.488616,23.019 15.351792,0 0,35.95961 0.0694,0 -33.773938,16.3058 0.50306,16.3233 90.688298,0 0.15613,-16.3233 -33.75659,-16.3058 0.0693,0 0,-35.95961 15.21301,0 9.50598,-23.019 9.03761,0 L 216.70041,79.18747 203.88122,56.9664 227.42063,-2e-5 l -56.42865,0 -91.451568,0 -56.446015,0 z m 175.981796,68.58867 6.12336,10.59882 -36.9657,64.04383 30.84234,-74.64265 z m -147.654708,0.0694 30.44338,73.81003 -36.532055,-63.28059 6.088675,-10.52944 z"
+            :id "cup"}]
+    [:path {:style {:fill "#ffffff"}
+            :d "M 34.526818,-51.55751 52.996969,21.61337 -3.3828659,-29.67722 47.907724,26.68531 -25.263158,8.21516 47.336482,28.79717 -25.263158,51.97574 49.223311,35.73862 -3.3828669,89.86811 50.746623,37.26193 34.526818,111.7484 57.688076,39.14876 78.270092,111.7484 59.79994,38.56021 116.17977,89.86811 64.889185,33.48828 138.04275,51.97574 65.443117,31.39373 138.04275,8.21516 63.573598,24.43496 116.17977,-29.67722 62.050286,22.91165 78.270092,-51.55751 55.091523,21.04213 34.526818,-51.55751 z"
+            :id "shine"}]]])

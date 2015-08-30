@@ -286,6 +286,13 @@
 (def clear-description
   (comp space-sentences collapse-whitespace))
 
+(def normalize-answer
+  "Normalize answer to enable non-exact matching."
+  (comp trim
+        lower-case
+        remove-punctuation
+        replace-diacritics))
+
 (defn despoilerify
   "Replace spoilers suggesting label from description"
   [{:keys [label description surfaceForms] :as item}]
