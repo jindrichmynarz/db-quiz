@@ -67,11 +67,9 @@
 
 (defn load-gdocs-items
   "Load items from Google Spreadsheet's worksheet."
-  [spreadsheet-url]
+  [spreadsheet-id]
   (let [worksheet-id "od6" ; FIXME: Is this value universally valid?
-        spreadsheet-id (spreadsheet-url-to-id spreadsheet-url)
-        url (str "https://spreadsheets.google.com/feeds/list/"
-                 spreadsheet-id "/" worksheet-id "/public/full")
+        url (str "https://spreadsheets.google.com/feeds/list/" spreadsheet-id "/" worksheet-id "/public/full")
         transform-row (fn [{{label :$t} :gsx$label
                            {description :$t} :gsx$description}]
                         (when (and label description)
@@ -81,16 +79,14 @@
         raw-results-chan (wrap-load (http/jsonp url {:query-params {:alt "json-in-script"}})
                                 (chan 1 (map (comp (partial map transform-row) :entry :feed :body))))
         results-chan (chan)]
-    (if spreadsheet-id
-      (go (let [results (<! raw-results-chan)
-                    results-count (count results)]
-                (cond (< results-count number-of-fields)
-                        (reagent-modals/modal! (modals/invalid-spreadsheet-rows results-count))
-                      (every? nil? results)
-                        (reagent-modals/modal! (modals/invalid-spreadsheet-columns))
-                      :else (>! results-chan (take number-of-fields (shuffle results))))
-                results-chan))
-      (reagent-modals/modal! (modals/invalid-google-spreadsheet-url spreadsheet-url)))))
+    (go (let [results (<! raw-results-chan)
+              results-count (count results)]
+          (cond (< results-count number-of-fields)
+                (reagent-modals/modal! (modals/invalid-spreadsheet-rows results-count))
+                (every? nil? results)
+                (reagent-modals/modal! (modals/invalid-spreadsheet-columns))
+                :else (>! results-chan (take number-of-fields (shuffle results))))
+          results-chan))))
 
 (defmulti merge-board-with-data
   "Merge data with questions into the initialized board."
@@ -160,7 +156,10 @@
 
 (defmethod load-board-data :gdrive
   [board callback]
-  (let [spreadsheet-url (get-in @app-state [:options :doc])]
-    (go (let [results (<! (load-gdocs-items spreadsheet-url))]
-          (swap! app-state #(assoc % :board (merge-board-with-data board results)))
-          (callback)))))
+  (let [spreadsheet-url (get-in @app-state [:options :doc])
+        spreadsheet-id (spreadsheet-url-to-id spreadsheet-url)]
+    (if spreadsheet-id
+      (go (let [results (<! (load-gdocs-items spreadsheet-id))]
+            (swap! app-state #(assoc % :board (merge-board-with-data board results)))
+            (callback)))
+      (reagent-modals/modal! (modals/invalid-google-spreadsheet-url spreadsheet-url)))))
