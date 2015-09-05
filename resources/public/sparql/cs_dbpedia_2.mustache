@@ -1,0 +1,89 @@
+{{!
+@param Array<Array<URI, URI>> selectors
+@param int                    tertile-size
+@param int                    tertile-offset
+@param int                    limit
+@param int                    offset
+}}
+
+PREFIX csdb:    <http://cs.dbpedia.org/property/>
+PREFIX dbo:     <http://dbpedia.org/ontology/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?subject
+       ?label
+       ?description
+       (GROUP_CONCAT(DISTINCT ?surfaceForm ; separator = "|") AS ?surfaceForms)
+WHERE {
+  {
+    SELECT ?subject 
+          (STR(SAMPLE(?_label)) AS ?label)
+          (STR(SAMPLE(?_description)) AS ?description) 
+    WHERE {
+      {
+        SELECT ?subject 
+        WHERE {
+          {
+            SELECT ?subject (COUNT(?link) AS ?indegree) 
+            WHERE {
+              {
+                SELECT DISTINCT ?subject
+                WHERE {
+                  GRAPH <http://cs.dbpedia.org> {
+                    VALUES (?p ?o) {
+                      {{#selectors}}
+                      (<{{{p}}}> <{{{o}}}>)
+                      {{/selectors}}
+                    }
+                    ?subject ?p ?o .
+                  }
+                }
+              }
+              OPTIONAL {
+                GRAPH <http://cs.dbpedia.org> {
+                  ?link dbo:wikiPageWikiLink ?subject .
+                }
+              }
+            }
+            GROUP BY ?subject
+            ORDER BY DESC(?indegree)
+          }
+        }
+        LIMIT {{tertile-size}} # Size of tertile interval 
+        OFFSET {{tertile-offset}} # Tertile's offset
+      }
+      GRAPH <http://cs.dbpedia.org> {
+        ?subject rdfs:label ?_label ;
+          dbo:abstract ?_description .
+        FILTER (!REGEX(?_label, "^(\\p{Lu}\\.?) $") 
+                &&
+                (STRLEN(?_description) > 140) 
+                &&
+                langMatches(lang(?_label), "cs")
+                &&
+                langMatches(lang(?_description), "cs")
+                &&
+                (STRLEN(?_label) < 40))
+      }
+    }
+    GROUP BY ?subject
+    LIMIT {{limit}}
+    OFFSET {{offset}} # Random offset inside the (tertile - LIMIT)
+  }
+  GRAPH <http://cs.dbpedia.org> {
+    VALUES ?surfaceFormProperty {
+      csdb:name
+      csdb:název
+      csdb:příjmení
+      dbo:birthName
+      dbo:wikiPageWikiLinkText
+      dcterms:title
+    }
+    OPTIONAL {
+      ?subject ?surfaceFormProperty ?surfaceForm .
+      FILTER isLiteral(?surfaceForm)
+    }
+  }
+}
