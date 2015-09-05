@@ -296,7 +296,12 @@
         ; Sort surface forms from the longest to the shortest, so that we first replace
         ; the longer matches. 
         surface-forms (sort-by (comp - count)
-                               (conj (split surfaceForms "|") clean-label label))]
+                               ; Filter empty and < 2 characters long surface forms
+                               (distinct (conj (filter (every-pred (complement (partial re-matches #"^\s+$"))
+                                                                   (comp (partial < 2) count))
+                                                       (split surfaceForms "|"))
+                                              clean-label
+                                              label)))]
     (assoc item
            :abbreviation abbreviation
            :description (-> description
@@ -304,7 +309,8 @@
                             clear-description
                             (replace-surface-forms abbreviation surface-forms)
                             truncate-description)
-           :label (join " " tokens))))
+           :label (join " " tokens)
+           :surface-forms surface-forms)))
 
 (defn generate-hint
   [answer & {:keys [percent-revealed]
