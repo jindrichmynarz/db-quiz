@@ -10,7 +10,6 @@
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [org.clojure/clojurescript "1.7.107" :scope "provided"]
                  [ring-server "0.4.0"]
-                 [cljsjs/react "0.13.3-1"]
                  [cljsjs/mustache "1.1.0-0"]
                  [reagent "0.5.0"]
                  [reagent-utils "0.1.5"]
