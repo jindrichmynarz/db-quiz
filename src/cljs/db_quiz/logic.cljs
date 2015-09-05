@@ -102,15 +102,19 @@
     (some has-sides-connected? (filter has-all-sides? players-fields))))
 
 (defn answer-matches?
-  "Test if guess matches the exepcted answer using Jaro-Winkler's string distance.
-  Fuzzy matching may be tweaked by setting threshold
+  "Test if guess matches the excepted answer (its label or any of its surface forms)
+  using Jaro-Winkler's string distance. Fuzzy matching may be tweaked by setting threshold
   from 0 (everything matches) to 1 (only exact matches)."
   [guess answer & {:keys [threshold]}]
   {:pre [(or (not threshold) (< 0 threshold 1))]}
   (if guess
-    (> (jaro-winkler (normalize-answer guess)
-                     (normalize-answer answer))
-       (or threshold (:guess-similarity-threshold config)))
+    (let [{:keys [label surface-forms]} answer
+          normalized-guess (normalize-answer guess)
+          actual-threshold (or threshold (:guess-similarity-threshold config))
+          match-fn (fn [surface-form] (> (jaro-winkler normalized-guess
+                                                       (normalize-answer surface-form))
+                                         actual-threshold))]
+      (not (nil? (some match-fn (cons label surface-forms)))))
     false))
 
 (defn clear-answer
@@ -184,7 +188,7 @@
 (defn make-a-guess
   []
   (let [{:keys [answer board current-field on-turn verdict]} @app-state
-        correct-answer (get-in board [current-field :label])
+        correct-answer (board current-field)
         answer-matched? (answer-matches? answer correct-answer)
         new-ownership (if answer-matched? on-turn :missed)]
     (when (nil? verdict)
@@ -192,7 +196,7 @@
       (test-winner new-ownership current-field)
       (turn :answer answer
             :answer-matched? answer-matched?
-            :correct-answer correct-answer))))
+            :correct-answer (:label correct-answer)))))
 
 (defn pick-field
   "A player picks a field with id on board."
