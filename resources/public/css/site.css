@@ -135,7 +135,6 @@ a:hover {
   height: 17.32px;
   background-color: #000;
   margin: 8.66px 0;
-
   display: inline-block;
   -webkit-animation: flag_tail linear 5s infinite;
   animation: flag_tail linear 5s infinite;
@@ -385,4 +384,13 @@ td {
   position: fixed;
   top: 2%;
   left: 2%;
+}
+
+#shine {
+  -webkit-animation: flag_tail linear 60s infinite;
+  animation: flag_tail linear 60s infinite;
+  -webkit-transform-origin: 50% 50%;
+  -moz-transform-origin: 50% 50%;
+  -o-transform-origin: 50% 50%;
+  transform-origin: 50% 50%;
 }
