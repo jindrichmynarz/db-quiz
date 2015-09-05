@@ -313,9 +313,28 @@
            :surface-forms surface-forms)))
 
 (defn generate-hint
-  [answer & {:keys [percent-revealed]
-             :or {percent-revealed 0.2}}]
-  (letfn [(reveal [ch] (if (< (rand) percent-revealed) ch "⏑"))]
+  "Generates a hint for answer, in which given percent of non-initial characters is revealed.
+  Characters that are not revealed are replaced with the given placeholder."
+  [answer & {:keys [percent-revealed placeholder]
+             :or {percent-revealed 0.2
+                  placeholder "⏑"}}]
+  (let [tokens (map trim (tokenize answer))
+        tail-lengths (map (comp count rest) tokens)
+        character-count (apply + tail-lengths)
+        tail-offsets (reductions + 0 tail-lengths)
+        ; Reveal at least 1 character
+        to-reveal (max (js/Math.floor (* character-count percent-revealed)) 1)
+        ; Pick random indices of the characters to reveal
+        revealed-indices (take to-reveal (shuffle (range character-count)))]
     (join " "
-      (map (comp (fn [[head & tail]] (apply str (cons head (map reveal tail)))) trim)
-           (tokenize answer)))))
+          (map (fn [[head & tail] tail-range]
+                  (apply str
+                         (cons head
+                               (map (fn [character index]
+                                      (if (some #{index} revealed-indices)
+                                        character
+                                        placeholder))
+                                    tail
+                                    tail-range))))
+              tokens 
+              (map range tail-offsets (rest tail-offsets))))))
