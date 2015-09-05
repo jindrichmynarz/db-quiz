@@ -14,7 +14,7 @@
             [reagent.core :refer [atom]]
             [reagent-modals.modals :as reagent-modals]))
 
-(def cookies (goog.net.Cookies. js/document))
+(defonce cookies (goog.net.Cookies. js/document))
 
 (defn check-if-online
   "If browser is offline, show a warning modal.
