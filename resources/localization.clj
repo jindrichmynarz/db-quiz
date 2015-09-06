@@ -22,6 +22,7 @@
                        :software "Software"
                        :uncertain-death "Osoby s nejistým datem úmrtí"
                        :works "Díla"}
+             :example-spreadsheets "Příklady"
              :field-labelling "Označování políček"
              :game-url "URL hry"
              :google-spreadsheet "Google Spreadsheet"
@@ -29,7 +30,8 @@
              :play "Hrát"
              :player-1! "1. hráč"
              :player-2! "2. hráč"
-             :player-name "Jméno hráče"}
+             :player-name "Jméno hráče"
+             :quiz "kvíz"}
       :labels {:about "O hře"
                :home "Domů"
                :loading "Načítání"
@@ -97,6 +99,7 @@ Zvolte *File* → *Publish to the web...* a klikněte na *Publish*."
                        :software "Software"
                        :uncertain-death "People with uncertain date of death"
                        :works "Works"}
+             :example-spreadsheets "Examples"
              :field-labelling "Field labelling"
              :game-url "URL of the game"
              :google-spreadsheet "Google Spreadsheet"
@@ -104,7 +107,8 @@ Zvolte *File* → *Publish to the web...* a klikněte na *Publish*."
              :play "Play"
              :player-1! "Player 1"
              :player-2! "Player 2"
-             :player-name "Player's name"}
+             :player-name "Player's name"
+             :quiz "quiz"}
       :labels {:about "About the game"
                :home "Home"
                :loading "Loading"

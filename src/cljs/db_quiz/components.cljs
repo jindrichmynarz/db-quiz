@@ -123,7 +123,7 @@
                            :data-key id
                            :key id}
                   (if (keyword? label) (t label) label)])]
-    (fn []
+    (fn [id label-key options]
       (let [current (get-in @app-state id)]
         [:div.form-group
          [label-element id-str (t label-key)]
@@ -142,7 +142,7 @@
   (let [id-str (string/join "." (map name id))
         click (fn [current-id update-fn]
                 (swap! app-state (fn [state] (update-in state id #(update-fn % current-id)))))]
-    (fn []
+    (fn [id label-key options]
       (let [current-value (get-in @app-state id)]
         [:div.form-group
          [label-element id-str (t label-key)]
@@ -184,23 +184,43 @@
                                 :type "text"
                                 :value player-name}]]]))))
 
+(defn- set-google-spreadsheet-url
+  [url]
+  (letfn [(update-url [state] (assoc-in state [:options :doc] url))
+          (update-share-url [state] (assoc-in state [:options :share-url] (generate-share-url url)))]
+    (comp update-share-url update-url)))
+
+(defn snm-switch
+  []
+  (let [update-fn (set-google-spreadsheet-url
+                    "https://docs.google.com/spreadsheets/d/1XpkdSYMEEEBPurgfOEOPDn54AqT6uAGsZdEn9Nq0Vsk/edit")]
+    (fn []
+      [:button.btn.btn-default.btn-xs
+       {:on-click (fn [e] (.preventDefault e)
+                    (swap! app-state update-fn))}
+       "SNM-" (t :home/quiz)])))
+
 (defn google-spreadsheet-url
   "Input for URL of a Google Spreadsheet to load data from"
   []
   (letfn [(click-info [_] (reagent-modals/modal! (modals/google-spreadsheet-help)))
-          (change [e] (let [value (.. e -target -value)
-                            update-fn (comp #(assoc-in % [:options :share-url] (generate-share-url value))
-                                            #(assoc-in % [:options :doc] value))]
+          (change [e] (let [url (.. e -target -value)
+                            update-fn (set-google-spreadsheet-url url)]
                         (swap! app-state update-fn)))]
     (fn []
-      [:div.form-group
-       [:p [:label.control-label {:for "options.doc"} "Google Spreadsheet URL"]
-        [:a {:on-click click-info}
-         [:span.glyphicon.glyphicon-question-sign.glyphicon-end]]]
-       [:p
-        [:input.form-control {:id :options.doc
-                              :on-change change
-                              :type "url"}]]])))
+      (let [{{:keys [doc]} :options
+             :keys [language]} @app-state]
+        [:div.form-group
+         [:p [:label.control-label {:for "options.doc"} "Google Spreadsheet URL"]
+          [:a {:on-click click-info}
+           [:span.glyphicon.glyphicon-question-sign.glyphicon-end]]]
+         [:p
+          [:input.form-control {:id :options.doc
+                                :on-change change
+                                :type "url"
+                                :value doc}]]
+        (when (= language :cs)
+          [:p [:strong (t :home/example-spreadsheets) ": "] [snm-switch]])]))))
 
 (defn share-url
   "URL of the game based on given Google Spreadsheet"
@@ -214,10 +234,10 @@
 
 (defn field-labelling
   []
-  (single-select [:options :labels]
+  [single-select [:options :labels]
                  :home/field-labelling
                  [[:numeric "0-9"]
-                  [:alphabetic "A-Z"]]))
+                  [:alphabetic "A-Z"]]])
 
 (defn language-picker
   []
@@ -239,33 +259,34 @@
 
 (defn difficulty-picker
   []
-  (single-select [:options :difficulty]
+  [single-select [:options :difficulty]
                  :home.difficulty/label
                  [[:easy :home.difficulty/easy]
                   [:normal :home.difficulty/normal]
-                  [:hard :home.difficulty/hard]]))
+                  [:hard :home.difficulty/hard]]])
 
 (defn selector-picker
   []
-  (let [selectors (case (:language @app-state)
-                    :cs [[:persons :home.domains/persons]
-                         [:places :home.domains/places]
-                         [:works :home.domains/works]
-                         [:born-in-brno :home.domains/born-in-brno]
-                         [:ksc-members :home.domains/ksc-members]
-                         [:uncertain-death :home.domains/uncertain-death]
-                         [:artists :home.domains/artists]
-                         [:politicians :home.domains/politicians]
-                         [:musicians :home.domains/musicians]
-                         [:films :home.domains/films]]
-                    :en [[:persons :home.domains/persons]
-                         [:places :home.domains/places]
-                         [:companies :home.domains/companies]
-                         [:software :home.domains/software]
-                         [:languages :home.domains/languages]])]
-    (multi-select [:options :selectors]
-                  :home.domains/label
-                  selectors)))
+  (let [selectors {:cs [[:persons :home.domains/persons]
+                        [:places :home.domains/places]
+                        [:works :home.domains/works]
+                        [:born-in-brno :home.domains/born-in-brno]
+                        [:ksc-members :home.domains/ksc-members]
+                        [:uncertain-death :home.domains/uncertain-death]
+                        [:artists :home.domains/artists]
+                        [:politicians :home.domains/politicians]
+                        [:musicians :home.domains/musicians]
+                        [:films :home.domains/films]]
+                   :en [[:persons :home.domains/persons]
+                        [:places :home.domains/places]
+                        [:companies :home.domains/companies]
+                        [:software :home.domains/software]
+                        [:languages :home.domains/languages]]}]
+    (fn []
+      (let [language (:language @app-state)]
+        [multi-select [:options :selectors]
+                      :home.domains/label
+                      (language selectors)]))))
 
 (defn google-spreadsheet-options
   []
