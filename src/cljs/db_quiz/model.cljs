@@ -77,16 +77,16 @@
                            :abbreviation (normalize/abbreviate label)
                            :description description}))
         raw-results-chan (wrap-load (http/jsonp url {:query-params {:alt "json-in-script"}})
-                                (chan 1 (map (comp (partial map transform-row) :entry :feed :body))))
+                                    (chan 1 (map (comp (partial map transform-row) :entry :feed :body))))
         results-chan (chan)]
     (go (let [results (<! raw-results-chan)
               results-count (count results)]
           (cond (< results-count number-of-fields)
-                (reagent-modals/modal! (modals/invalid-spreadsheet-rows results-count))
+                  (reagent-modals/modal! (modals/invalid-spreadsheet-rows results-count))
                 (every? nil? results)
-                (reagent-modals/modal! (modals/invalid-spreadsheet-columns))
-                :else (>! results-chan (take number-of-fields (shuffle results))))
-          results-chan))))
+                  (reagent-modals/modal! (modals/invalid-spreadsheet-columns))
+                :else (>! results-chan (take number-of-fields (shuffle results))))))
+    results-chan))
 
 (defmulti merge-board-with-data
   "Merge data with questions into the initialized board."
