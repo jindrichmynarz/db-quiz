@@ -1,5 +1,13 @@
 (ns db-quiz.config)
 
+; Selector properties
+(defonce dcterms-subject "http://purl.org/dc/terms/subject")
+(defonce rdf-type "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+
+; Namespace prefixes
+(def cs-category (partial str "http://cs.dbpedia.org/resource/Kategorie:")) 
+(def dbo (partial str "http://dbpedia.org/ontology/"))
+
 (defonce config
   {; Number of hexagons on one side of the triangle
    :board-size 7
@@ -31,26 +39,32 @@
    ; Maximum number of characters in a question
    :max-question-length 500
    ; Selectors for filtering questions retrieved by SPARQL queries
-   :selectors {:persons {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                         :o "http://dbpedia.org/ontology/Person"}
-               :places {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                        :o "http://dbpedia.org/ontology/Place"}
-               :works {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                       :o "http://dbpedia.org/ontology/Work"}
-               :born-in-brno {:p "http://purl.org/dc/terms/subject"
-                              :o "http://cs.dbpedia.org/resource/Kategorie:Narození_v_Brně"}
-               :ksc-members {:p "http://purl.org/dc/terms/subject"
-                             :o "http://cs.dbpedia.org/resource/Kategorie:Členové_KSČ"}
-               :uncertain-death {:p "http://purl.org/dc/terms/subject"
-                                 :o "http://cs.dbpedia.org/resource/Kategorie:Osoby_s_nejistým_datem_úmrtí"}
-               :artists {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                         :o "http://dbpedia.org/ontology/Artist"}
-               :politicians {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                             :o "http://dbpedia.org/ontology/Politician"}
-               :musicians {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                           :o "http://dbpedia.org/ontology/MusicalArtist"}
-               :films {:p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                       :o "http://dbpedia.org/ontology/Film"}}
+   :selectors {:artists {:p rdf-type 
+                         :o (dbo "Artist")}
+               :born-in-brno {:p dcterms-subject
+                              :o (cs-category "Narození_v_Brně")}
+               :companies {:p rdf-type
+                           :o (dbo "Company")} 
+               :films {:p rdf-type
+                       :o (dbo "Film")}
+               :ksc-members {:p dcterms-subject
+                             :o (cs-category "Členové_KSČ")}
+               :languages {:p rdf-type
+                           :o (dbo "Language")}
+               :musicians {:p rdf-type 
+                           :o (dbo "MusicalArtist")}
+               :persons {:p rdf-type
+                         :o (dbo "Person")}
+               :places {:p rdf-type
+                        :o (dbo "Place")}
+               :politicians {:p rdf-type
+                             :o (dbo "Politician")}
+               :software {:p rdf-type
+                          :o (dbo "Software")}
+               :uncertain-death {:p dcterms-subject
+                                 :o (cs-category "Osoby_s_nejistým_datem_úmrtí")}
+               :works {:p rdf-type
+                       :o (dbo "Work")}}
    ; Available time for making a guess (in seconds)
    :time-to-guess 45
    ; Time to display the correct answer (in seconds)

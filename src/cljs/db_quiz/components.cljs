@@ -247,18 +247,25 @@
 
 (defn selector-picker
   []
-  (multi-select [:options :selectors]
-                :home.domains/label
-                [[:persons :home.domains/persons]
-                 [:places :home.domains/places]
-                 [:works :home.domains/works]
-                 [:born-in-brno :home.domains/born-in-brno]
-                 [:ksc-members :home.domains/ksc-members]
-                 [:uncertain-death :home.domains/uncertain-death]
-                 [:artists :home.domains/artists]
-                 [:politicians :home.domains/politicians]
-                 [:musicians :home.domains/musicians]
-                 [:films :home.domains/films]]))
+  (let [selectors (case (:language @app-state)
+                    :cs [[:persons :home.domains/persons]
+                         [:places :home.domains/places]
+                         [:works :home.domains/works]
+                         [:born-in-brno :home.domains/born-in-brno]
+                         [:ksc-members :home.domains/ksc-members]
+                         [:uncertain-death :home.domains/uncertain-death]
+                         [:artists :home.domains/artists]
+                         [:politicians :home.domains/politicians]
+                         [:musicians :home.domains/musicians]
+                         [:films :home.domains/films]]
+                    :en [[:persons :home.domains/persons]
+                         [:places :home.domains/places]
+                         [:companies :home.domains/companies]
+                         [:software :home.domains/software]
+                         [:languages :home.domains/languages]])]
+    (multi-select [:options :selectors]
+                  :home.domains/label
+                  selectors)))
 
 (defn google-spreadsheet-options
   []
@@ -272,21 +279,23 @@
         [field-labelling]])
 
 (def advanced-options
-  (let [toggle-data-source (partial toggle [:dbpedia :gdrive])
-        click-handler {:on-click (fn [_] (swap! app-state
-                                                #(update-in %
-                                                            [:options :data-source]
-                                                            toggle-data-source)))}
+  (let [id [:options :data-source]
+        toggle-data-source (partial toggle [:dbpedia :gdrive])
+        click-handler {:on-click (fn [_] (swap! app-state #(update-in % id toggle-data-source)))}
+        activate (fn [active?] (if active? "active" ""))
         tab-pane-class (partial join-by-space "tab-pane")]
     (fn []
-      (let [[dbpedia-class gdrive-class] (case (get-in @app-state [:options :data-source])
-                                               :dbpedia ["active" ""]
-                                               :gdrive ["" "active"])]
+      (let [current (get-in @app-state id)
+            language (:language @app-state)
+            dbpedia-class (activate (= current :dbpedia))
+            gdrive-class (activate (= current :gdrive))]
         [:div
          [:p (t :home/data-source)]
          [:ul.nav.nav-tabs
-          [:li {:class dbpedia-class} [:a click-handler "DBpedia"]]
-          [:li {:class gdrive-class} [:a click-handler "Google Spreadsheet"]]]
+          [:li {:class dbpedia-class}
+           [:a click-handler (t :home/dbpedia)]]
+          [:li {:class gdrive-class}
+           [:a click-handler (t :home/google-spreadsheet)]]]
          [:div.tab-content
           [:div {:class (tab-pane-class dbpedia-class)}
             [dbpedia-options]]
