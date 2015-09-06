@@ -97,5 +97,6 @@
                                    :builds {:app
                                              {:source-paths ["env/prod/cljs"]
                                               :compiler
-                                              {:optimizations :advanced
+                                              {:externs ["externs/bootstrap.js"]
+                                               :optimizations :advanced
                                                :pretty-print false}}}}}})

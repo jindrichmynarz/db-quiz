@@ -100,9 +100,8 @@
   It will be destroyed after 10 seconds and we will store that it was shown in cookies."
   [tooltip-name element]
   (let [cookie-id (str "tooltip-" tooltip-name)
-        cookie-value (.get cookies cookie-id)
-        shown? (not (nil? cookie-value))]
-    (when-not shown?
+        shown? (.get cookies cookie-id)]
+    (when (undefined? shown?)
       (let [element (js/$ (reagent/dom-node element))]
         (.tooltip element "show")
         (js/setTimeout (fn []
