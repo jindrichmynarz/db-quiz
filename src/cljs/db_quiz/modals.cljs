@@ -22,10 +22,8 @@
 
 (defn error-loading-data
   [sparql-endpoint]
-  (modal
-    [:div (t :modals/error-sparql-load)
-     [:a {:href sparql-endpoint} sparql-endpoint]
-     ". " (t :modals/error-sparql-load-hint)]))
+  (modal (wrap-html (render-template (t :modals/error-sparql-load)
+                                     :data {:sparql-endpoint sparql-endpoint}))))
 
 (defn game-info
   []

@@ -35,8 +35,7 @@
                  :no-spreadsheet-url "URL Google Spreadsheetu nesmí být prázdné."
                  :player-1-missing "Chybí jméno 1. hráče."
                  :player-2-missing "Chybí jméno 2. hráče."}
-      :modals {:error-sparql-load "Chyba při načítání dat ze SPARQL endpointu"
-               :error-sparql-load-hint "Zkuste snížit počet okruhů otázek nebo hru znovu načíst."
+      :modals {:error-sparql-load! "Chyba při načítání dat ze SPARQL endpointu <a href=\"{{sparql-endpoint}}\">{{sparql-endpoint}}</a>. Zkuste snížit počet okruhů otázek nebo hru znovu načíst."
                :game-info* "## Pravidla hry ##
 
 Hra je založena na známé televizní soutěži [AZ-kvíz](https://cs.wikipedia.org/wiki/AZ-kv%C3%ADz). Jejím cílem je obsadit pole souvisle spojující všechny 3 strany hrací plochy. Hráč získá pole v případě, kdy správně zodpoví položenou otázku. Každá otázka obsahuje popis hádané věci a zkratku jejího názvu. Pokud je otázka pro zvolené pole zodpovězena nesprávně, pole je označeno jako neuhodnuté a jakýkoli hráč na tahu ho může získat bez nutnosti zodpovídání otázky. Na zodpovězení otázky má každý hráč 45 sekund. První hráč, který svými poli souvisle propojí všechny 3 strany hrací plochy, se stává vítězem. Začíná náhodně vylosovaný hráč.
@@ -106,8 +105,7 @@ Zvolte *File* → *Publish to the web...* a klikněte na *Publish*."
                  :no-spreadsheet-url "Google Spreadsheet URL must not be empty."
                  :player-1-missing "Missing name of the player 1."
                  :player-2-missing "Missing name of the player 2."}
-      :modals {:error-sparql-load "Error loading data from a SPARQL endpoint."
-               :error-sparql-load-hint "Try lowering the number of domains of questions or reloading the game"
+      :modals {:error-sparql-load! "Error loading data from a SPARQL endpoint <a href=\"{{sparql-endpoint}}\">{{sparql-endpoint}}</a>. Try lowering the number of domains of questions or reloading the game"
                :game-info* "## Rules of the game ##
 
 DB-quiz is based on TV show [AZ-kvíz](https://cs.wikipedia.org/wiki/AZ-kv%C3%ADz), which is well-known in the Czech Republic. The game is played on a triangular board made of hexagonal fields. Each turn players select an available field that they want to acquire. Players acquire fields when they correctly answer the question associated with the field. Each question is posed as a description of the thing the players must guess. The goal of the game is get to own fields that continuously span all 3 sides of the board. The first player who achieves this goal wins the game. The starting player is chosen at random and then the players alternate.
