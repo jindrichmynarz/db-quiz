@@ -11,7 +11,7 @@
             [db-quiz.i18n :refer [t]]
             [clojure.string :as string]
             [goog.net.Cookies]
-            [reagent.core :refer [atom]]
+            [reagent.core :as reagent :refer [atom]]
             [reagent-modals.modals :as reagent-modals]))
 
 (defonce cookies (goog.net.Cookies. js/document))
@@ -94,6 +94,21 @@
   "Generate classes for a button based on whether it is active or not."
   [active?]
   (join-by-space "btn" "btn-default" (if active? "active" "")))
+
+(defn mount-tooltip
+  "Mounts a Twitter bootstrap tooltip onto an element.
+  It will be destroyed after 10 seconds and we will store that it was shown in cookies."
+  [tooltip-name element]
+  (let [cookie-id (str "tooltip-" tooltip-name)
+        cookie-value (.get cookies cookie-id)
+        shown? (not (nil? cookie-value))]
+    (when-not shown?
+      (let [element (js/$ (reagent/dom-node element))]
+        (.tooltip element "show")
+        (js/setTimeout (fn []
+                         (.tooltip element "destroy")
+                         (.set cookies cookie-id "true"))
+                       10000)))))
 
 ; ----- Common components -----
 
@@ -386,39 +401,61 @@
                           :spellCheck "false"
                           :type "text"}]))
 
+(defn answer-button
+  []
+  (reagent/create-class
+    {:component-did-mount (partial mount-tooltip "answer-button")
+     :display-name "answer-button"
+     :reagent-render (fn []
+                       [:button.btn.btn-primary
+                        {:data-placement "bottom"
+                         :on-click make-a-guess
+                         :title (t :tooltips/answer-button)}
+                        [:span.glyphicon.glyphicon-ok.glyphicon-start]
+                        (t :play/guess)])}))
+
 (defn timeout
   "Progress bar showing the ellapsed time from player's turn."
   [on-turn completion]
-  [:div.row
-   [:div#timeout {:class (name on-turn)}]
-   [:div#timeout-shade {:style {:margin-left (str completion "%")
-                                :width (str (- 100 completion) "%")}}]])
+  (reagent/create-class
+    {:component-did-mount (partial mount-tooltip "timeout")
+     :display-name "timeout"
+     :reagent-render (fn [on-turn completion]
+                       [:div.row {:data-placement "bottom"
+                                  :title (t :tooltips/timeout)}
+                        [:div#timeout {:class (name on-turn)}]
+                        [:div#timeout-shade {:style {:margin-left (str completion "%")
+                                                     :width (str (- 100 completion) "%")}}]])}))
 
 (defn verdict-component
   "Show verdict if answer was correct or not."
   []
-  (let [{:keys [board current-field verdict]} @app-state
-        correct-answer (get-in board [current-field :label])
-        {:keys [icon
-                success
-                verdict-class]} (if verdict
-                                  {:icon canvas/tick
-                                   :success (t :play.verdict/yes)
-                                   :verdict-class "alert-success"}
-                                  {:icon canvas/cross
-                                   :success (t :play.verdict/no)
-                                   :verdict-class "alert-danger"})]
-    (when-not (nil? verdict)
-      [:div#verdict.row
-       [:div.col-sm-12
-        [:p {:class (join-by-space "alert" verdict-class)}
-         [icon]
-         success ". " (t :play/correct-answer) " " [:strong correct-answer] "."]]])))
+  (reagent/create-class
+    {:component-did-mount (partial mount-tooltip "verdict")
+     :display-name "verdict"
+     :reagent-render (fn []
+                       (let [{:keys [board current-field verdict]} @app-state
+                             correct-answer (get-in board [current-field :label])
+                             {:keys [icon
+                                     success
+                                     verdict-class]} (if verdict
+                                                       {:icon canvas/tick
+                                                        :success (t :play.verdict/yes)
+                                                        :verdict-class "alert-success"}
+                                                       {:icon canvas/cross
+                                                        :success (t :play.verdict/no)
+                                                        :verdict-class "alert-danger"})]
+                         [:div#verdict.row {:data-placement "bottom"
+                                            :title (t :tooltips/verdict)}
+                          [:div.col-sm-12
+                           [:p {:class (join-by-space "alert" verdict-class)}
+                            [icon]
+                            success ". " (t :play/correct-answer) " " [:strong correct-answer] "."]]]))}))
 
 (defn question-box
   "Box for presenting the question with given id."
   [id]
-  (let [{:keys [board]} @app-state
+  (let [{:keys [board verdict]} @app-state
         {:keys [abbreviation description label]} (board id)]
     [:div
       [:div.row
@@ -430,16 +467,13 @@
           [:div.input-group
             [guess]
             [:span.input-group-btn
-             [:button.btn.btn-primary
-              {:on-click make-a-guess}
-              [:span.glyphicon.glyphicon-ok.glyphicon-start]
-              (t :play/guess)]
+             [answer-button]
              [:button.btn.btn-danger
               {:on-click make-a-guess
                :title (t :play/skip-title)}
               [:span.glyphicon.glyphicon-forward.glyphicon-start]
               (t :play/skip)]]]]]
-      [verdict-component]]))
+      (when-not (nil? verdict) [verdict-component])]))
 
 (defn player-on-turn
   "Show the name of the player, whose turn it currently is."

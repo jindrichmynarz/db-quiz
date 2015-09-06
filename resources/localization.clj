@@ -74,7 +74,10 @@ Zvolte *File* → *Publish to the web...* a klikněte na *Publish*."
              :skip "Dál"
              :skip-title "Nevim, dál!"
              :verdict {:no "Ne"
-                       :yes "Ano"}}}
+                       :yes "Ano"}}
+      :tooltips {:answer-button "Odpověď lze také odeslat stisknutím Enteru."
+                 :timeout "Zde uvidíte zbývající čas na tah."
+                 :verdict "Verdikt lze zavřít stisknutím Enteru."}}
  :en {:end {:no-winner "Who plays, wins."
             :play-again "Play again"
             :winner "The winner is"}
@@ -151,4 +154,7 @@ The spreadsheet needs to be published before it can be read by DB-quiz. To do so
              :skip "Skip"
              :skip-title "Man, I really don't know!"
              :verdict {:no "No"
-                       :yes "Yes"}}}}
+                       :yes "Yes"}}
+      :tooltips {:answer-button "You can also submit your guess by pressing Enter."
+                 :timeout "This is where you will see time ellapsed of your turn."
+                 :verdict "The verdict can be closed by hitting Enter."}}}
