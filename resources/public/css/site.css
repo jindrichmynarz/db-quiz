@@ -100,7 +100,7 @@ a:hover {
   border-color: #969696;
 }
 
-.btn.btn-default:focus, button.close {
+.btn.btn-default:focus, .btn.btn-primary:focus, .btn.btn-danger:focus, button.close {
   outline: 0;
 }
 
@@ -117,8 +117,8 @@ a:hover {
 
 #loading {
   position: fixed;
-  top: 0;
-  right: 0;
+  top: 1em;
+  right: 2%;
   padding: 5px 10px;
   height: 50px;
   z-index: 10;
@@ -179,7 +179,7 @@ a:hover {
 }
 
 #hex-triangle {
-  margin: 0 auto;
+  margin: 0 auto 1em auto;
 }
 
 .hex-outer {
@@ -382,7 +382,7 @@ td {
 #info-menu {
   z-index: 10;
   position: fixed;
-  top: 2%;
+  top: 1em; 
   left: 2%;
 }
 
