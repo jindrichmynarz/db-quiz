@@ -1,12 +1,12 @@
 (ns db-quiz.components
   (:require [db-quiz.logic :refer [annull-game! init-board make-a-guess]]
-            [db-quiz.model :as model] 
+            [db-quiz.model :as model]
             [db-quiz.state :refer [app-state]]
             [db-quiz.util :refer [join-by-space redirect toggle]]
             [db-quiz.modals :as modals]
             [db-quiz.config :refer [config]]
             [db-quiz.normalize :refer [trim-player-name]]
-            [db-quiz.layout.svg :as svg] 
+            [db-quiz.layout.svg :as svg]
             [db-quiz.layout.canvas :as canvas]
             [db-quiz.i18n :refer [t]]
             [clojure.string :as string]
@@ -23,8 +23,8 @@
   (when-not js/navigator.onLine (reagent-modals/modal! (modals/offline))))
 
 (defn generate-share-url
-  "Generate persistent game URL based on Google Spreadsheet at the given URL." 
-  [url] 
+  "Generate persistent game URL based on Google Spreadsheet at the given URL."
+  [url]
   (let [location (.-location js/window)]
     (str (.-origin location)
          (.-pathname location)
@@ -90,6 +90,11 @@
     {:valid? (every? nil? errors)
      :errors (remove nil? errors)}))
 
+(defn- btn-class-fn
+  "Generate classes for a button based on whether it is active or not."
+  [active?]
+  (join-by-space "btn" "btn-default" (if active? "active" "")))
+
 ; ----- Common components -----
 
 (defn menu
@@ -113,11 +118,10 @@
   [id label-key options]
   (let [id-str (string/join "." (map name id))
         click (fn [e] (swap! app-state #(assoc-in % id (keyword (.. e -target -dataset -key)))))
-        btn-class (partial join-by-space "btn" "btn-default")
         button (fn [current-id [id label]]
-                 [:button {:class (btn-class (when (= id current-id) "active"))
+                 [:button {:class (btn-class-fn (= id current-id))
                            :data-key id
-                           :key id} 
+                           :key id}
                   (if (keyword? label) (t label) label)])]
     (fn []
       (let [current (get-in @app-state id)]
@@ -137,8 +141,7 @@
   [id label-key options]
   (let [id-str (string/join "." (map name id))
         click (fn [current-id update-fn]
-                (swap! app-state (fn [state] (update-in state id #(update-fn % current-id)))))
-        btn-class (fn [active?] (join-by-space "btn" "btn-default" (when active? "active")))]
+                (swap! app-state (fn [state] (update-in state id #(update-fn % current-id)))))]
     (fn []
       (let [current-value (get-in @app-state id)]
         [:div.form-group
@@ -148,7 +151,7 @@
           (doall (for [[current-id label] options
                        :let [active? (current-value current-id)
                              update-fn (if active? disj conj)]]
-                   [:button {:class (btn-class active?)
+                   [:button {:class (btn-class-fn active?)
                              :key label
                              :on-click (partial click current-id update-fn)}
                     (t label)]))]]))))
@@ -164,37 +167,40 @@
      [:p.vcenter (t :labels/loading) "..."]]))
 
 (defn player-form-field
-  "Form field for player's name"
-  [id label]
-  (let [player-name (get-in @app-state [:players id])
-        local-id (keyword (str "players." (name id)))]
-    [:div {:class (join-by-space "form-group" "player-field" (name id))}
-     [label-element local-id label] 
-     [:div.col-sm-8
-      [:input.form-control {:id local-id
-                            :max-length 20
-                            :on-change (fn [e]
-                                         (swap! app-state #(assoc-in % [:players id] (.. e -target -value))))
-                            :placeholder (t :home/player-name)
-                            :type "text"
-                            :value player-name}]]]))
+  "Form field for player's name given player id and label-key"
+  [id label-key]
+  (let [local-id (string/join "." ["players" (name id)])
+        classes (join-by-space "form-group" "player-field" (name id))
+        change (fn [e] (swap! app-state #(assoc-in % [:players id] (.. e -target -value))))]
+    (fn []
+      (let [player-name (get-in @app-state [:players id])]
+        [:div {:class classes}
+         [label-element local-id (t label-key)]
+         [:div.col-sm-8
+          [:input.form-control {:id local-id
+                                :max-length 20
+                                :on-change change
+                                :placeholder (t :home/player-name)
+                                :type "text"
+                                :value player-name}]]]))))
 
 (defn google-spreadsheet-url
   "Input for URL of a Google Spreadsheet to load data from"
   []
-  [:div.form-group
-   [:p [:label.control-label {:for "options.doc"} "Google Spreadsheet URL"]
-         [:a {:on-click #(reagent-modals/modal! (modals/google-spreadsheet-help))}
-          [:span.glyphicon.glyphicon-question-sign.glyphicon-end]]]
-   [:p
-    [:input.form-control {:id :options.doc
-                          :on-change (fn [e]
-                                       (let [value (.. e -target -value)
-                                             update-fn (comp #(assoc-in % [:options :share-url]
-                                                                          (generate-share-url value))
-                                                             #(assoc-in % [:options :doc] value))]
-                                         (swap! app-state update-fn)))
-                          :type "url"}]]])
+  (letfn [(click-info [_] (reagent-modals/modal! (modals/google-spreadsheet-help)))
+          (change [e] (let [value (.. e -target -value)
+                            update-fn (comp #(assoc-in % [:options :share-url] (generate-share-url value))
+                                            #(assoc-in % [:options :doc] value))]
+                        (swap! app-state update-fn)))]
+    (fn []
+      [:div.form-group
+       [:p [:label.control-label {:for "options.doc"} "Google Spreadsheet URL"]
+        [:a {:on-click click-info}
+         [:span.glyphicon.glyphicon-question-sign.glyphicon-end]]]
+       [:p
+        [:input.form-control {:id :options.doc
+                              :on-change change
+                              :type "url"}]]])))
 
 (defn share-url
   "URL of the game based on given Google Spreadsheet"
@@ -215,22 +221,21 @@
 
 (defn language-picker
   []
-  (let [language (:language @app-state)
-        [cs-class en-class] (case language
-                                  :cs ["active" ""]
-                                  :en ["" "active"])
-        click-fn (fn [e]
-                   (let [language (.. e -target -dataset -key)]
-                     (swap! app-state #(assoc % :language (keyword language)))
-                     (.set cookies "language" language)))]
-    [:div.form-group {:on-click click-fn}
-     [:div.btn-group.col-sm-6.col-sm-offset-8 {:role "group"}
-      [:button {:class (join-by-space "btn" "btn-default" cs-class)
-                :data-key :cs}
-       "Česky"]
-      [:button {:class (join-by-space "btn" "btn-default" en-class)
-                :data-key :en}
-       "English"]]]))
+  (let [options [[:cs "Česky"]
+                 [:en "English"]]
+        click-fn (fn [language]
+                     (swap! app-state #(assoc % :language language))
+                     (.set cookies "language" (name language)))]
+    (fn []
+      (let [language (:language @app-state)]
+        [:div.form-group
+         [:div.btn-group.col-sm-6.col-sm-offset-8 {:role "group"}
+          (doall (for [[id label] options
+                       :let [active? (= id language)]]
+                   [:button {:class (btn-class-fn active?)
+                             :key id
+                             :on-click (partial click-fn id)}
+                     label]))]]))))
 
 (defn difficulty-picker
   []
@@ -279,7 +284,7 @@
                                                :gdrive ["" "active"])]
         [:div
          [:p (t :home/data-source)]
-         [:ul.nav.nav-tabs 
+         [:ul.nav.nav-tabs
           [:li {:class dbpedia-class} [:a click-handler "DBpedia"]]
           [:li {:class gdrive-class} [:a click-handler "Google Spreadsheet"]]]
          [:div.tab-content
@@ -292,8 +297,8 @@
   []
   [:div
    [language-picker]
-   [player-form-field :player-1 (t :home/player-1)]
-   [player-form-field :player-2 (t :home/player-2)]])
+   [player-form-field :player-1 :home/player-1]
+   [player-form-field :player-2 :home/player-2]])
 
 (def start-menu
   (let [options-hidden (atom true)]
@@ -303,7 +308,7 @@
       [:div.col-sm-6.col-sm-offset-3
        [:div#start-menu.form-horizontal
         [basic-options]
-        [:div#advanced 
+        [:div#advanced
          [:h4
           [:a {:on-click (fn [e]
                            (swap! options-hidden not)
@@ -347,7 +352,7 @@
                                          ; Submit a guess by pressing Enter
                                          (when (= (.-keyCode e) 13)
                                            (make-a-guess)))
-                          :placeholder (or hint (t :play/answer)) 
+                          :placeholder (or hint (t :play/answer))
                           :spellCheck "false"
                           :type "text"}]))
 
@@ -363,7 +368,7 @@
   "Show verdict if answer was correct or not."
   []
   (let [{:keys [board current-field verdict]} @app-state
-        correct-answer (get-in board [current-field :label]) 
+        correct-answer (get-in board [current-field :label])
         {:keys [icon
                 success
                 verdict-class]} (if verdict
@@ -371,7 +376,7 @@
                                    :success (t :play.verdict/yes)
                                    :verdict-class "alert-success"}
                                   {:icon canvas/cross
-                                   :success (t :play.verdict/no) 
+                                   :success (t :play.verdict/no)
                                    :verdict-class "alert-danger"})]
     (when-not (nil? verdict)
       [:div#verdict.row
@@ -425,7 +430,7 @@
   (let [{:keys [board current-field]} @app-state]
     (if (empty? board)
       (do (redirect "#") ; If no data is loaded, redirect to home page.
-          [:div]) ; Return empty div as a valid Reagent component. 
+          [:div]) ; Return empty div as a valid Reagent component.
       [:div.container-fluid
        [menu]
        [:div.row
@@ -434,7 +439,7 @@
          [player-on-turn]
          (when current-field
            [question-box current-field])]]
-       [reagent-modals/modal-window]]))) 
+       [reagent-modals/modal-window]])))
 
 ; ----- End page -----
 
