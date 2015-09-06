@@ -93,20 +93,65 @@
 ; ----- Common components -----
 
 (defn menu
+  "Fixed information & navigazion menu"
   []
   [:div#info-menu.btn-group {:role "group"}
-   [:a.btn.btn-default {:href "#"}
-    [:span.glyphicon.glyphicon-home.glyphicon-start]
-    (t :labels/home)]
-   [:button.btn.btn-default {:on-click #(reagent-modals/modal! (modals/game-info)
-                                                               {:size :lg})}
-    [:span.glyphicon.glyphicon-info-sign.glyphicon-start]
-    (t :labels/about)]])
+   [:a.btn.btn-default {:href "#"} [:span.glyphicon.glyphicon-home.glyphicon-start] (t :labels/home)]
+   [:button.btn.btn-default {:on-click #(reagent-modals/modal! (modals/game-info) {:size :lg})}
+    [:span.glyphicon.glyphicon-info-sign.glyphicon-start] (t :labels/about)]])
 
 (defn label-element
   "Label with text for input identified with for-id"
   [for-id text]
   [:label.col-sm-4.control-label {:for for-id} text])
+
+(defn single-select
+  "Single-select button group. Associates selected value into given id path in app-state.
+  The group is labelled with label-key's value from the translation map.
+  Values of the available buttons are given in options as a collection of [value label] pairs.
+  Label can be either a string or a keyword that will be looked up in the translation map."
+  [id label-key options]
+  (let [id-str (string/join "." (map name id))
+        click (fn [e] (swap! app-state #(assoc-in % id (keyword (.. e -target -dataset -key)))))
+        btn-class (partial join-by-space "btn" "btn-default")
+        button (fn [current-id [id label]]
+                 [:button {:class (btn-class (when (= id current-id) "active"))
+                           :data-key id
+                           :key id} 
+                  (if (keyword? label) (t label) label)])]
+    (fn []
+      (let [current (get-in @app-state id)]
+        [:div.form-group
+         [label-element id-str (t label-key)]
+         [:div.btn-group.col-sm-8 {:id id-str
+                                   :on-click click
+                                   :role "group"}
+          (doall (for [option options]
+                   (button current option)))]]))))
+
+(defn multi-select
+  "Multi-select button group.Associates selected values into given id path in app-state.
+  The group is labelled with label-key's value from the translation map.
+  Values of the available buttons are given in options as a collection of [value label] pairs.
+  Label can be either a string or a keyword that will be looked up in the translation map."
+  [id label-key options]
+  (let [id-str (string/join "." (map name id))
+        click (fn [current-id update-fn]
+                (swap! app-state (fn [state] (update-in state id #(update-fn % current-id)))))
+        btn-class (fn [active?] (join-by-space "btn" "btn-default" (when active? "active")))]
+    (fn []
+      (let [current-value (get-in @app-state id)]
+        [:div.form-group
+         [label-element id-str (t label-key)]
+         [:div.col-sm-8.btn-group-vertical {:id id-str
+                                            :role "group"}
+          (doall (for [[current-id label] options
+                       :let [active? (current-value current-id)
+                             update-fn (if active? disj conj)]]
+                   [:button {:class (btn-class active?)
+                             :key label
+                             :on-click (partial click current-id update-fn)}
+                    (t label)]))]]))))
 
 ; ----- Home page -----
 
@@ -163,25 +208,10 @@
 
 (defn field-labelling
   []
-  (let [id [:options :labels]
-        options [[:numeric "0-9"]
-                 [:alphabetic "A-Z"]]
-        click-fn (fn [e]
-                   (swap! app-state
-                          #(assoc-in % id (keyword (.. e -target -dataset -key)))))
-        btn-class-fn (partial join-by-space "btn" "btn-default")
-        button-fn (fn [current-id [id label]]
-                    [:button {:class (btn-class-fn (when (= id current-id) "active"))
-                              :data-key id
-                              :key id} 
-                     label])]
-    (fn []
-      (let [current (get-in @app-state id)]
-        [:div.form-group {:on-click click-fn}
-         [:label.col-sm-4.control-label (t :home/field-labelling)]
-         [:div.btn-group.col-sm-8 {:role "group"}
-          (doall (for [option options]
-                   (button-fn current option)))]]))))
+  (single-select [:options :labels]
+                 :home/field-labelling
+                 [[:numeric "0-9"]
+                  [:alphabetic "A-Z"]]))
 
 (defn language-picker
   []
@@ -204,53 +234,26 @@
 
 (defn difficulty-picker
   []
-  (let [id [:options :difficulty]
-        click-fn (fn [e]
-                   (swap! app-state
-                          #(assoc-in % id (keyword (.. e -target -dataset -key)))))
-        btn-class-fn (partial join-by-space "btn" "btn-default")
-        options [[:easy :home.difficulty/easy]
-                 [:normal :home.difficulty/normal]
-                 [:hard :home.difficulty/hard]]
-        button-fn (fn [current-id [id translate-id]]
-                    [:button {:class (btn-class-fn (when (= id current-id) "active"))
-                              :data-key id
-                              :key id} 
-                     (t translate-id)])]
-    (fn []
-      (let [difficulty (get-in @app-state id)]
-        [:div.form-group {:on-click click-fn}
-         [:label.col-sm-4.control-label (t :home.difficulty/label)]
-         [:div.btn-group.col-sm-8 {:role "group"}
-          (doall (for [option options]
-                   (button-fn difficulty option)))]]))))
+  (single-select [:options :difficulty]
+                 :home.difficulty/label
+                 [[:easy :home.difficulty/easy]
+                  [:normal :home.difficulty/normal]
+                  [:hard :home.difficulty/hard]]))
 
 (defn selector-picker
   []
-  (let [active-selectors (get-in @app-state [:options :selectors])
-        selectors [[:persons (t :home.domains/persons)]
-                   [:places (t :home.domains/places)]
-                   [:works (t :home.domains/works)]
-                   [:born-in-brno (t :home.domains/born-in-brno)]
-                   [:ksc-members (t :home.domains/ksc-members)]
-                   [:uncertain-death (t :home.domains/uncertain-death)]
-                   [:artists (t :home.domains/artists)]
-                   [:politicians (t :home.domains/politicians)]
-                   [:musicians (t :home.domains/musicians)]
-                   [:films (t :home.domains/films)]]]
-        [:div.form-group
-         [label-element "options.selectors" (t :home.domains/label)]
-         [:div.col-sm-8.btn-group-vertical {:role "group"}
-          (for [[id label] selectors
-                :let [active? (active-selectors id)
-                      update-fn (if active? disj conj)]]
-            [:button {:class (join-by-space "btn" "btn-default" (when active? "active"))
-                      :key label
-                      :on-click (fn [_] (swap! app-state
-                                               (fn [state] (update-in state
-                                                                      [:options :selectors]
-                                                                      #(update-fn % id)))))}
-             label])]]))
+  (multi-select [:options :selectors]
+                :home.domains/label
+                [[:persons :home.domains/persons]
+                 [:places :home.domains/places]
+                 [:works :home.domains/works]
+                 [:born-in-brno :home.domains/born-in-brno]
+                 [:ksc-members :home.domains/ksc-members]
+                 [:uncertain-death :home.domains/uncertain-death]
+                 [:artists :home.domains/artists]
+                 [:politicians :home.domains/politicians]
+                 [:musicians :home.domains/musicians]
+                 [:films :home.domains/films]]))
 
 (defn google-spreadsheet-options
   []
@@ -421,7 +424,8 @@
   []
   (let [{:keys [board current-field]} @app-state]
     (if (empty? board)
-      (redirect "#") ; If no data is loaded, redirect to home page.
+      (do (redirect "#") ; If no data is loaded, redirect to home page.
+          [:div]) ; Return empty div as a valid Reagent component. 
       [:div.container-fluid
        [menu]
        [:div.row
