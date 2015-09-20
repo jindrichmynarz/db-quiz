@@ -19,8 +19,26 @@
              :missed "#333333"
              :player-1 "#fc4349"
              :player-2 "#354d65"}
-   :data {:sparql {; Maximum number of results per query
-                   :page-size 5000}}
+   :data {:sparql {:difficulty-distribution {; Minimum size of a difficulty interval
+                                             :min-size 50
+                                             ; Parameters of the exponential distribution
+                                             :params {:b 0.12} 
+                                             ; Angles (in degrees) of the distribution's tangent delimiting
+                                             ; its first and second third.
+                                             :split-angles {:easy 179
+                                                            :normal 135}}
+                   :endpoint-urls {:cs "http://cs.dbpedia.org/sparql"
+                                   :en "http://dbpedia.org/sparql"}
+                   ; Maximum number of results per query
+                   :page-size 5000
+                   :query-files {:cs {:alphabetic "sparql/cs_dbpedia_az.mustache"
+                                      :difficulty-intervals "sparql/cs_dbpedia_count_intervals.mustache"
+                                      :max-instance-count "sparql/max_instances_per_indegree.mustache"
+                                      :numeric "sparql/cs_dbpedia.mustache"}
+                                 :en {:alphabetic ""
+                                      :difficulty-intervals ""
+                                      :max-instance-count ""
+                                      :numeric ""}}}}
    ; Similarity threshold required for the guess to match the correct answer
    :guess-similarity-threshold 0.94
    :layout {; Width of hexagon's border (in pixels)

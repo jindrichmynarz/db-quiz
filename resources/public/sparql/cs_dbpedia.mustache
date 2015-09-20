@@ -1,7 +1,7 @@
 {{!
 @param Array<Array<URI, URI>> selectors
 @param int                    limit
-@param int                    offset
+@parem int                    offset
 }}
 
 PREFIX csdb:    <http://cs.dbpedia.org/property/>
@@ -10,63 +10,68 @@ PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?subject
-      (STR(SAMPLE(?_label)) AS ?label)
-      (STR(SAMPLE(?_description)) AS ?description) 
-      (GROUP_CONCAT(DISTINCT ?surfaceForm ; separator = "|") AS ?surfaceForms)
+       ?label
+       ?description
+       (GROUP_CONCAT(DISTINCT ?surfaceForm ; separator = "|") AS ?surfaceForms)
 WHERE {
   {
-    SELECT ?subject
+    SELECT ?subject ?label ?description
     WHERE {
       {
-        SELECT ?subject (COUNT(?link) AS ?inDegree)
+        SELECT ?subject
+              (STR(SAMPLE(?_label)) AS ?label)
+              (STR(SAMPLE(?_description)) AS ?description) 
         WHERE {
-          GRAPH <http://cs.dbpedia.org> {
-            VALUES (?p ?o) {
-              {{#selectors}}
-              (<{{{p}}}> <{{{o}}}>)
-              {{/selectors}}
+          {
+            SELECT ?subject (COUNT(?link) AS ?indegree)
+            WHERE {
+              GRAPH <http://cs.dbpedia.org> {
+                VALUES (?p ?o) {
+                  {{#selectors}}
+                  (<{{{p}}}> <{{{o}}}>)
+                  {{/selectors}}
+                }
+                ?subject ?p ?o .
+                OPTIONAL {
+                  ?link dbo:wikiPageWikiLink ?subject .
+                }
+              }
             }
-            ?subject ?p ?o .
-            ?link dbo:wikiPageWikiLink ?subject .
+            GROUP BY ?subject
+          }
+          GRAPH <http://cs.dbpedia.org> {
+            ?subject rdfs:label ?_label ;
+              dbo:abstract ?_description .
+            FILTER (!REGEX(?_label, "^(\\p{Lu}\\.?)+$") {{! Filter out abbreviations, such as "R.E.M.". }}
+                    &&
+                    (STRLEN(?_description) > 140) {{! Get only resources with longer descriptions. }} 
+                    &&
+                    langMatches(lang(?_label), "cs")
+                    &&
+                    langMatches(lang(?_description), "cs")
+                    &&
+                    (STRLEN(?_label) < 30)) {{! Eliminate too long labels. }}
           }
         }
-        GROUP BY ?subject
-        ORDER BY DESC(?inDegree)
+        GROUP BY ?subject ?indegree
+        ORDER BY DESC(?indegree)
       }
     }
+    LIMIT {{limit}}
     OFFSET {{offset}}
-    LIMIT 5000
   }
-  GRAPH <http://cs.dbpedia.org> {
-    ?subject rdfs:label ?_label ;
-      dbo:abstract ?_description .
-    FILTER (!REGEX(?_label, "^(\\p{Lu}\\.?)+$") {{! Filter out abbreviations, such as "R.E.M.". }}
-            &&
-            (STRLEN(?_description) > 140) {{! Get only resources with longer descriptions. }} 
-            &&
-            langMatches(lang(?_label), "cs")
-            &&
-            langMatches(lang(?_description), "cs")
-            &&
-            (STRLEN(?_label) < 40)) {{! Eliminate too long labels. }} 
-    VALUES ?surfaceFormProperty {
-      csdb:name
-      csdb:název
-      csdb:příjmení
-      dbo:birthName
-      dbo:wikiPageWikiLinkText
-      dcterms:title
-    }
-    OPTIONAL {
+  OPTIONAL {
+    GRAPH <http://cs.dbpedia.org> {
+      VALUES ?surfaceFormProperty {
+        csdb:name
+        csdb:název
+        csdb:příjmení
+        dbo:birthName
+        dbo:wikiPageWikiLinkText
+        dcterms:title
+      }
       ?subject ?surfaceFormProperty ?surfaceForm .
-      {{! Prevent empty surface forms }}
-      FILTER (isLiteral(?surfaceForm)
-              &&
-              STRLEN(STR(?surfaceForm)) > 2
-              &&
-              !regex(STR(?surfaceForm), "^\\s+$"))
     }
   }
 }
-GROUP BY ?subject
-LIMIT {{limit}}
+GROUP BY ?subject ?label ?description

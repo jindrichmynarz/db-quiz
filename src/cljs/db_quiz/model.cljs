@@ -11,6 +11,32 @@
             [clojure.string :refer [replace split]]
             [reagent-modals.modals :as reagent-modals]))
 
+; ----- Private functions -----
+
+(def ^:private degrees->radians
+  "Convert angle in degrees to radians"
+  (partial * (/ js/Math.PI 180)))
+        
+(def ^:private get-difficulties
+  "Parse SPARQL query results for difficulties into vector of numbers of instances
+  for difficulties: [easy normal hard]"
+  (letfn [(parse-difficulty-intervals [{:keys [difficulty size]}]
+            [(keyword difficulty) (js/parseInt size 10)])]
+    (comp (juxt :easy :normal :hard)
+      (partial into {})
+      (partial map parse-difficulty-intervals))))
+
+(def ^:private get-indegree-limit
+  "Gets limiting indegrees from an exponential distribution. 
+  `max-count` is the number of instances in the distribution,
+  `angle` is the angle of the tangent of the distribution, where the limiting indegree is computed,  
+  `b-param` determines the shape of the exponential distribution."
+  (let [b-param (get-in config [:data :sparql :difficulty-distribution :params :b])] 
+    (fn [max-count angle]
+      (/ (js/Math.log (- (/ (* max-count b-param)
+                            (js/Math.tan (degrees->radians angle)))))
+         b-param))))
+
 ; ----- Public functions -----
 
 (def sparql-results-channel
@@ -117,35 +143,46 @@
 
 (defmethod load-board-data :dbpedia
   [board callback]
-  (let [{{:keys [difficulty labels selectors]} :options} @app-state
-        endpoint "http://cs.dbpedia.org/sparql"
-        count-file "sparql/cs_dbpedia_count.mustache"
-        query-file (case labels
-                         :numeric "sparql/cs_dbpedia.mustache"
-                         :alphabetic "sparql/cs_dbpedia_az.mustache")
-        selectors-data (map (:selectors config) selectors)
-        ; Offset is generated from the total count of available instances.
-        ; The count is split into thirds, in which random offset is generated
-        ; to select a random subset of the third. First third is easy difficulty,
-        ; second third is normal difficulty, and the last third is hard difficulty.
-        count-to-offset (fn [c]
-                          (let [third (js/Math.floor (/ c 3))
-                                offset (rand-int (- third number-of-fields))]
-                            (case difficulty
-                                  :easy offset
-                                  :normal (+ third offset)
-                                  :hard (+ (* third 2) offset))))
+  (let [{{:keys [difficulty labels selectors]} :options
+         :keys [language]} @app-state
+        {{{{:keys [min-size split-angles]} :difficulty-distribution
+           :keys [endpoint-urls query-files]} :sparql} :data
+         selectors-map :selectors} config
+        endpoint (language endpoint-urls)
+        queries (language query-files)
+        query-file (labels queries)
+        selectors-data (map selectors-map selectors)
         count-query-channel (sparql-query endpoint
-                                          count-file
+                                          (:max-instance-count queries)
                                           :data {:selectors selectors-data})
+        difficulty-intervals-channel-fn (fn [& {:keys [minimum-indegree maximum-indegree]}]
+                                           (sparql-query endpoint
+                                                         (:difficulty-intervals queries)
+                                                         :data {:maximum-indegree maximum-indegree
+                                                                :minimum-indegree minimum-indegree
+                                                                :selectors selectors-data}))
         query-channel-fn (fn [offset]
                            (sparql-query endpoint
                                          query-file
-                                         :data {:selectors selectors-data
-                                                :limit number-of-fields
-                                                :offset offset}))]
-    (go (if-let [count-result (:count (first (<! count-query-channel)))]
-          (let [offset (count-to-offset (js/parseInt count-result 10))
+                                         :data {:limit number-of-fields
+                                                :offset offset
+                                                :selectors selectors-data}))]
+    (go (if-let [max-count (:maxCount (first (<! count-query-channel)))]
+          (let [indegree-limit-fn (partial get-indegree-limit max-count)
+                maximum-indegree (indegree-limit-fn (:easy split-angles))
+                minimum-indegree (indegree-limit-fn (:normal split-angles))
+                difficulty-intervals-sizes (get-difficulties (<! (difficulty-intervals-channel-fn
+                                                                   :maximum-indegree maximum-indegree
+                                                                   :minimum-indegree minimum-indegree)))
+                normalized-intervals-sizes (conj (vec (reductions + 0 (map (partial max min-size)
+                                                                           (pop difficulty-intervals-sizes))))
+                                                 (last difficulty-intervals-sizes))
+                difficulty-intervals (partition 2 1 normalized-intervals-sizes)
+                [minimum maximum] (nth difficulty-intervals (case difficulty
+                                                              :easy 0
+                                                              :normal 1
+                                                              :hard 2))
+                offset (+ minimum (rand-int (- maximum minimum number-of-fields)))
                 results (map normalize/despoilerify (<! (query-channel-fn offset)))
                 results-count (count results)]
             (if (= results-count number-of-fields)
