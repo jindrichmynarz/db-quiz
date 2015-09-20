@@ -4,6 +4,7 @@
             [db-quiz.config :refer [config]]
             [db-quiz.normalize :refer [generate-hint normalize-answer]]
             [db-quiz.util :refer [listen number-of-fields redirect toggle]]
+            [db-quiz.analytics :as analytics]
             [cljs.core.async :refer [alts! close! chan put! timeout]]
             [clojure.string :as string]
             [clojure.set :refer [intersection union]]
@@ -12,6 +13,20 @@
 (def ^:private verdict-display-time
   "Time to display the correct answer (in milliseconds)"
   (* (:verdict-display-time config) 1000))
+
+(defn randomize-despoilerification
+  "Set randomly if descriptions will be despoilerified in the advanced mode.
+  There is a 20 % chance that despoilerification will be switched off."
+  []
+  (let [despoilerify? (< (rand) 0.8)]
+    (when-not despoilerify? (js/console.log "[WARNING] Questions are not despoilerified."))
+    (swap! app-state #(assoc-in % [:options :despoilerify?] despoilerify?))))
+
+(defn update-success-rate
+  "Update the counts of correctly and incorrectly answered questions."
+  [correct-answer?]
+  (let [answer-type (if correct-answer? :correct :incorrect)]
+    (swap! app-state #(update-in % [:answers answer-type] inc))))
 
 (defn init-board
   "Initialize a data structure representing the game board."
@@ -187,11 +202,15 @@
 
 (defn make-a-guess
   []
-  (let [{:keys [answer board current-field on-turn verdict]} @app-state
+  (let [{{:keys [data-source]} :options
+         :keys [answer board current-field on-turn verdict]} @app-state
         correct-answer (board current-field)
         answer-matched? (answer-matches? answer correct-answer)
         new-ownership (if answer-matched? on-turn :missed)]
     (when (nil? verdict)
+      (when (= data-source :dbpedia)
+        (analytics/log-answer (:subject correct-answer) answer-matched?)
+        (update-success-rate answer-matched?))
       ; Test if the game is over:
       (test-winner new-ownership current-field)
       (turn :answer answer

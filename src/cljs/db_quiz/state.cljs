@@ -3,6 +3,8 @@
 
 (defonce app-state
   (atom {:answer nil
+         :answers {:correct 0
+                   :incorrect 0}
          :board {}
          :current-field nil
          :hint nil
@@ -10,6 +12,7 @@
          :loading? false
          :on-turn (rand-nth [:player-1 :player-2])
          :options {:data-source :dbpedia
+                   :despoilerify? true
                    :difficulty :normal
                    :doc ""
                    :labels :numeric

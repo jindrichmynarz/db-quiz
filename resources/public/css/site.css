@@ -81,17 +81,11 @@ a:hover {
   margin-bottom: 1em;
 }
 
-.player-field label:before {
-  content: "\2B22";
-  font-size: 1.33em;
-  margin-right: 4px;
-}
-
-.player-field.player-1 label:before {
+.player-field.player-1 {
   color: #fc4349;
 }
 
-.player-field.player-2 label:before {
+.player-field.player-2 {
   color: #354d65;
 }
 
@@ -339,6 +333,20 @@ td {
 
 #question-box {
   text-align: left;
+}
+
+#report-spoiler {
+  position: relative;
+  top: 50%;
+  transform: translateY(50%);
+}
+
+#report-spoiler.inactive button { 
+  cursor: default;
+}
+
+#report-spoiler.inactive button:hover {
+  background: inherit;
 }
 
 #description {

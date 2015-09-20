@@ -1,6 +1,7 @@
 (ns db-quiz.normalize
   (:refer-clojure :exclude [replace])
   (:require [db-quiz.config :refer [config]]
+            [db-quiz.state :refer [app-state]]
             [clojure.string :refer [join lower-case replace split trim]]))
 
 (defn abbreviate-tokens
@@ -290,18 +291,21 @@
 (defn despoilerify
   "Replace spoilers suggesting label from description"
   [{:keys [label description surfaceForms] :as item}]
-  (let [clean-label (clear-label label)
+  (let [despoilerify? (get-in @app-state [:options :despoilerify?])
+        clean-label (clear-label label)
         tokens (clear-tokens (tokenize clean-label))
         abbreviation (abbreviate-tokens tokens)
         ; Sort surface forms from the longest to the shortest, so that we first replace
         ; the longer matches. 
-        surface-forms (sort-by (comp - count)
+        surface-forms (if despoilerify?
+                          (sort-by (comp - count)
                                ; Filter empty and < 2 characters long surface forms
                                (distinct (conj (filter (every-pred (complement (partial re-matches #"^\s+$"))
                                                                    (comp (partial < 2) count))
                                                        (split surfaceForms "|"))
                                               clean-label
-                                              label)))]
+                                              label)))
+                          [label clean-label])]
     (assoc item
            :abbreviation abbreviation
            :description (-> description

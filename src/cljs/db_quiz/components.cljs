@@ -1,5 +1,5 @@
 (ns db-quiz.components
-  (:require [db-quiz.logic :refer [annull-game! init-board make-a-guess]]
+  (:require [db-quiz.logic :refer [annull-game! init-board make-a-guess randomize-despoilerification]]
             [db-quiz.model :as model]
             [db-quiz.state :refer [app-state]]
             [db-quiz.util :refer [join-by-space redirect toggle]]
@@ -9,6 +9,7 @@
             [db-quiz.layout.svg :as svg]
             [db-quiz.layout.canvas :as canvas]
             [db-quiz.i18n :refer [t]]
+            [db-quiz.analytics :as analytics]
             [clojure.string :as string]
             [goog.net.Cookies]
             [reagent.core :as reagent :refer [atom]]
@@ -368,22 +369,42 @@
         [:a.button {:on-click (fn [e]
                                 (let [{:keys [valid? errors]} (validate-options)]
                                   (if valid?
-                                    (model/load-board-data (init-board)
-                                                           (partial redirect "#play"))
+                                    (do (randomize-despoilerification)
+                                        (model/load-board-data (init-board)
+                                                               (partial redirect "#play")))
                                     (reagent-modals/modal! (modals/invalid-options errors)))))}
          [:span (t :home/play)]]]])))
 
 (defn home-page
   []
-  [:div.container-fluid
-   [loading-indicator]
-   [menu]
-   [:div#logo [:img {:alt (t :labels/logo)
-                     :src "img/logo.svg"}]]
-   [start-menu]
-   [reagent-modals/modal-window]])
+  (analytics/send-page-view "/")
+  (fn []
+    [:div.container-fluid
+     [loading-indicator]
+     [menu]
+     [:div#logo [:img {:alt (t :labels/logo)
+                       :src "img/logo.svg"}]]
+     [start-menu]
+     [reagent-modals/modal-window]]))
 
 ; ----- Play page -----
+
+(defn report-spoiler
+  "Button for reporting spoilers in questions."
+  []
+  (let [reported? (atom false)]
+    (fn []
+      [:div#report-spoiler {:class (join-by-space "col-sm-4" (when @reported? "inactive"))}
+       [:button.btn.btn-default
+        {:on-click (fn [e] (when-not @reported?
+                             (analytics/report-spoiler)
+                             (reset! reported? true))
+                     (.stopPropagation e))}
+        [:span {:class (join-by-space "glyphicon" "glyphicon-start"
+                                      (if @reported? "glyphicon-ok" "glyphicon-exclamation-sign"))}]
+        (if @reported?
+          (t :play/spoiler-reported)
+          (t :play/report-spoiler))]])))
 
 (defn guess
   "Input field for guesses"
@@ -454,12 +475,15 @@
 (defn question-box
   "Box for presenting the question with given id."
   [id]
-  (let [{:keys [board verdict]} @app-state
+  (let [{{:keys [data-source]} :options
+         :keys [board verdict]} @app-state
         {:keys [abbreviation description label]} (board id)]
     [:div
       [:div.row
         [:div.col-sm-12
-          [:h2 abbreviation]
+          [:div.row
+           [:div.col-sm-8 [:h2 abbreviation]]
+           (when (= data-source :dbpedia) [report-spoiler])]
           [:p#description description]]]
       [:div.row
         [:div.col-sm-12
@@ -490,33 +514,38 @@
 
 (defn play-page
   []
-  (let [{:keys [board current-field]} @app-state]
-    (if (empty? board)
-      (do (redirect "#") ; If no data is loaded, redirect to home page.
-          [:div]) ; Return empty div as a valid Reagent component.
-      [:div.container-fluid
-       [menu]
-       [:div.row
-        [:div.col-sm-6 [svg/hex-triangle]]
-        [:div#question-box.col-sm-6
-         [player-on-turn]
-         (when current-field
-           [question-box current-field])]]
-       [reagent-modals/modal-window]])))
+  (analytics/send-page-view "/play")
+  (fn []
+    (let [{:keys [board current-field]} @app-state]
+      (if (empty? board)
+        (do (redirect "#") ; If no data is loaded, redirect to home page.
+            [:div]) ; Return empty div as a valid Reagent component.
+        [:div.container-fluid
+         [menu]
+         [:div.row
+          [:div.col-sm-6 [svg/hex-triangle]]
+          [:div#question-box.col-sm-6
+           [player-on-turn]
+           (when current-field
+             [question-box current-field])]]
+         [reagent-modals/modal-window]]))))
 
 ; ----- End page -----
 
 (defn end-page
   []
-  (let [{{:keys [player] :as winner} :winner
-         {:keys [share-url]} :options
-         :keys [players]} @app-state
-        winner-name (players player)]
-    [:div
-     (if winner
-       [:div#winner
-        [svg/winners-cup (get-in config [:colours player])]
-        [:h3 (t :end/winner)]
-        [:h1 {:class (name player)} winner-name]]
-       [:h1 (t :end/no-winner)])
-     [:a.button {:href (or share-url "")} [:span (t :end/play-again)]]]))
+  (analytics/send-page-view "/end")
+  (analytics/report-success-rate)
+  (fn []
+    (let [{{:keys [player] :as winner} :winner
+           {:keys [share-url]} :options
+           :keys [players]} @app-state
+          winner-name (players player)]
+      [:div
+       (if winner
+         [:div#winner
+          [svg/winners-cup (get-in config [:colours player])]
+          [:h3 (t :end/winner)]
+          [:h1 {:class (name player)} winner-name]]
+         [:h1 (t :end/no-winner)])
+       [:a.button {:href (or share-url "")} [:span (t :end/play-again)]]])))
