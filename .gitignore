@@ -20,3 +20,5 @@ pom.xml.asc
 Session.vim
 .netrwhist
 *~
+
+*.min.css
