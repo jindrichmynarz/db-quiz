@@ -50,7 +50,9 @@ Hra je založena na známé televizní soutěži [AZ-kvíz](https://cs.wikipedia
 ## Jak hra funguje? ##
 
 V případě DB-quizu jsou herní otázky náhodně generovány na základě databáze. Ve hře je jako databáze použita sémantická podoba české Wikipedia, která je vytvářena v projektu [DBpedia](http://dbpedia.org/). Alternativně lze použít otázky z tabulek v Google Spreadsheets.
-                           
+
+Otázky ve hře jsou generovány automaticky, takže se může stát, že v nich bude prozrazena hádaná odpověď. V takovém případě prosím otázku nahlašte pomocí tlačítka 'Nahlásit spoiler'.
+ 
 Hru dal dohromady [Jindřich Mynarz](http://mynarz.net/#jindrich) s pomocí přátel. Zdrojový kód hry je k dispozici [zde](https://github.com/jindrichmynarz/db-quiz)."
                :google-spreadsheet-help* "## Jak má tabulka vypadat? ##
 
@@ -95,13 +97,16 @@ Zvolte *File* → *Publish to the web...* a klikněte na *Publish*."
                        :born-in-brno "Born in Brno"
                        :companies "Companies"
                        :films "Films"
+                       :insects "Insects"
                        :ksc-members "Members of the Communist Party"
                        :label "Domains of questions"
                        :languages "Languages"
                        :musicians "Musicians"
                        :places "Places"
+                       :plants "Plants"
                        :persons "People"
                        :politicians "Politicians"
+                       :soccer-players "Soccer players"
                        :software "Software"
                        :uncertain-death "People with uncertain date of death"
                        :works "Works"}
@@ -133,6 +138,8 @@ DB-quiz is based on TV show [AZ-kvíz](https://cs.wikipedia.org/wiki/AZ-kv%C3%AD
 ## How does the game work? ##
 
 DB-quiz generates game questions randomly from a database. The game uses the semantic form of Czech Wikipedie that is created as a part of [DBpedia](http://dbpedia.org/). Google Spreadsheet can be used as an alternative source of questions. 
+
+Questions in the game are generated automatically, so they may inadvertently reveal the correct answers. If you encounter such question, please report it using the 'Report spoiler' button.
 
 The game was created by [Jindřich Mynarz](http://mynarz.net/#jindrich) with help from his friends. Source code of the game is available [here](https://github.com/jindrichmynarz/db-quiz)."
                :google-spreadsheet-help* "## How should I format the spreadsheet? ##
