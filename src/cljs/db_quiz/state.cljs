@@ -13,12 +13,12 @@
          :on-turn (rand-nth [:player-1 :player-2])
          :options {:data-source :dbpedia
                    :despoilerify? true
-                   :difficulty :normal
+                   :difficulty :easy
                    :doc ""
                    :labels :numeric
                    :selectors #{:persons
                                 :places
-                                :works}
+                                :films}
                    :share-url ""}
          :players {:player-1 "Dmitrij"
                    :player-2 "Paní M."}
