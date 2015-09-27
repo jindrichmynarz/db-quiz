@@ -264,7 +264,7 @@
     (fn []
       (let [language (:language @app-state)]
         [:div.form-group
-         [:div.btn-group.col-sm-6.col-sm-offset-8 {:role "group"}
+         [:div.btn-group.col-sm-3.col-sm-offset-9 {:role "group"}
           (doall (for [[id label] options
                        :let [active? (= id language)]]
                    [:button {:class (btn-class-fn active?)
@@ -350,8 +350,8 @@
     (set-defaults!)
     (fn []
       (annull-game!)
-      [:div.col-sm-6.col-sm-offset-3
-       [:div#start-menu.form-horizontal
+      [:div.col-sm-8.col-sm-offset-2
+       [:div#start-menu.form-horizontal.row
         [basic-options]
         [:div#advanced
          [:h4
@@ -393,18 +393,26 @@
   "Button for reporting spoilers in questions."
   []
   (let [reported? (atom false)]
-    (fn []
-      [:div#report-spoiler {:class (join-by-space "col-sm-4" (when @reported? "inactive"))}
-       [:button.btn.btn-default
-        {:on-click (fn [e] (when-not @reported?
-                             (analytics/report-spoiler)
-                             (reset! reported? true))
-                     (.stopPropagation e))}
-        [:span {:class (join-by-space "glyphicon" "glyphicon-start"
-                                      (if @reported? "glyphicon-ok" "glyphicon-exclamation-sign"))}]
-        (if @reported?
-          (t :play/spoiler-reported)
-          (t :play/report-spoiler))]])))
+    (reagent/create-class 
+      {:component-did-mount (partial mount-tooltip "report-spoiler")
+       :display-name "report-spoiler"
+       :reagent-render (fn []
+                         [:div#report-spoiler {:data-placement "left"
+                                               :class (join-by-space "col-sm-4"
+                                                                     (when @reported? "inactive"))
+                                               :title (t :tooltips/report-spoiler)}
+                          [:button.btn.btn-default
+                           {:on-click (fn [e] (when-not @reported?
+                                                (analytics/report-spoiler)
+                                                (reset! reported? true))
+                                        (.stopPropagation e))}
+                           [:span {:class (join-by-space "glyphicon" "glyphicon-start"
+                                                         (if @reported?
+                                                           "glyphicon-ok"
+                                                           "glyphicon-exclamation-sign"))}]
+                           (if @reported?
+                             (t :play/spoiler-reported)
+                             (t :play/report-spoiler))]])})))
 
 (defn guess
   "Input field for guesses"

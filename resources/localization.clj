@@ -78,6 +78,7 @@ Zvolte *File* → *Publish to the web...* a klikněte na *Publish*."
              :verdict {:no "Ne"
                        :yes "Ano"}}
       :tooltips {:answer-button "Odpověď lze také odeslat stisknutím Enteru."
+                 :report-spoiler "Pokud otázka prozrazuje odpověď, můžete jí zde nahlásit."
                  :timeout "Zde uvidíte zbývající čas na tah."
                  :verdict "Verdikt lze zavřít stisknutím Enteru."}}
  :en {:end {:no-winner "Who plays, wins."
@@ -160,5 +161,6 @@ The spreadsheet needs to be published before it can be read by DB-quiz. To do so
              :verdict {:no "No"
                        :yes "Yes"}}
       :tooltips {:answer-button "You can also submit your guess by pressing Enter."
+                 :report-spoiler "If the question reveals the answer, you can report it here."
                  :timeout "This is where you will see time ellapsed of your turn."
                  :verdict "The verdict can be closed by hitting Enter."}}}
