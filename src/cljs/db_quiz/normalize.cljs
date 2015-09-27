@@ -263,14 +263,17 @@
   "Truncate description to the configured maximum length.
   Cuts the description on a complete sentence."
   [description]
-  (let [maximum-length (:max-question-length config)]
-    (cond (> (count description) maximum-length)
-          (reduce (fn [a b]
-                    (if (> (count a) maximum-length)
-                        a
-                        (str a ". " b)))
-                  (split description #"\.\s+"))
-          :else description)))
+  (let [maximum-length (:max-question-length config)
+        data-source (get-in @app-state [:options :data-source])]
+    (if (= data-source :dbpedia)
+      (cond (> (count description) maximum-length)
+            (reduce (fn [a b]
+                      (if (> (count a) maximum-length)
+                          a
+                          (str a ". " b)))
+                    (split description #"\.\s+"))
+            :else description)
+      description)))
 
 (def clear-label
   (comp trim delete-parenthesized-parts))
