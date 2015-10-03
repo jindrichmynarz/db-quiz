@@ -1,19 +1,11 @@
-(ns db-quiz.layout-test
+(ns db-quiz.layout.svg-test
   (:require [cljs.test :refer-macros [are deftest is testing]]
-            [db-quiz.layout :as layout]))
-
-(deftest shade-colour
-  (testing "Comparing with reference implementation"
-    (are [input-colour shade-percentage output-colour]
-         (= (layout/shade-colour input-colour shade-percentage) output-colour)
-         "#fa0000" 0 "#fa0000" ; With 0 shade percentage, the colour must stay the same.
-         "#fa0000" 30 "#ff4d4d"
-         "#fa0000" -30 "#ae0000")))
+            [db-quiz.layout.svg :as svg]))
 
 (deftest hex-corner
   (let [center (repeatedly 2 #(rand-int 1000))
         size (rand-int 100)
-        my-hex-corner (partial layout/hex-corner center size)]
+        my-hex-corner (partial svg/hex-corner center size)]
     ; Coordinates of hexagon's corners rotated by 360 degrees must be the same
     (are [degree inverse-degree]
          (= (my-hex-corner degree) (my-hex-corner inverse-degree))

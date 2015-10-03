@@ -1,7 +1,16 @@
 (ns db-quiz.runner
-  (:require [doo.runner :refer-macros [doo-tests]]
-            [db-quiz.layout-test]
-            [db-quiz.logic-test]))
+  (:require [cljs.test :refer-macros [run-all-tests]]
+            [doo.runner :refer-macros [doo-tests]]
+            [db-quiz.layout.svg-test]
+            [db-quiz.logic-test]
+            [db-quiz.util-test]))
 
-(doo-tests 'db-quiz.layout-test
-           'db-quiz.logic-test)
+(enable-console-print!)
+
+(defn ^:export run
+  []
+  (run-all-tests #"db-quiz.*-test"))
+
+(doo-tests 'db-quiz.layout.svg-test
+           'db-quiz.logic-test
+           'db-quiz.util-test)
