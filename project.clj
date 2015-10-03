@@ -1,5 +1,5 @@
-(defproject db-quiz "0.1.0-SNAPSHOT"
-  :description "An astonishing take on the old classic game of AZ-kvíz"
+(defproject db-quiz "0.8.0-SNAPSHOT"
+  :description "A database-backed take on the game of AZ-kvíz"
   :url "http://github.com/jindrichmynarz/db-quiz"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -8,17 +8,17 @@
 
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-                 [org.clojure/clojurescript "1.7.107" :scope "provided"]
+                 [org.clojure/clojurescript "1.7.122" :scope "provided"]
                  [ring-server "0.4.0"]
                  [cljsjs/mustache "1.1.0-0"]
-                 [reagent "0.5.0"]
+                 [reagent "0.5.1"]
                  [reagent-utils "0.1.5"]
                  [ring "1.4.0"]
                  [ring/ring-defaults "0.1.5"]
                  [prone "0.8.2"]
                  [compojure "1.4.0"]
                  [hiccup "1.0.5"]
-                 [environ "1.0.0"]
+                 [environ "1.0.1"]
                  [clj-tagsoup/clj-tagsoup "0.3.0" :exclusions [org.clojure/clojure]]
                  [cljs-http "0.1.37"]
                  [secretary "1.2.3"]
@@ -58,16 +58,16 @@
 
                    :dependencies [[ring-mock "0.1.5"]
                                   [ring/ring-devel "1.4.0"]
-                                  [leiningen-core "2.5.2"]
-                                  [lein-figwheel "0.3.7"]
-                                  [org.clojure/tools.nrepl "0.2.10"]
+                                  [leiningen-core "2.5.3"]
+                                  [lein-figwheel "0.4.0"]
+                                  [org.clojure/tools.nrepl "0.2.11"]
                                   [pjstadig/humane-test-output "0.7.0"]
-                                  [org.clojure/test.check "0.8.1"]]
+                                  [org.clojure/test.check "0.8.2"]]
 
                    :source-paths ["env/dev/clj"]
-                   :plugins [[lein-doo "0.1.4-SNAPSHOT"]
-                             [lein-figwheel "0.3.3"]
-                             [lein-cljsbuild "1.0.6"]]
+                   :plugins [[lein-doo "0.1.5-SNAPSHOT"]
+                             [lein-figwheel "0.4.0"]
+                             [lein-cljsbuild "1.1.0"]]
 
                    :injections [(require 'pjstadig.humane-test-output)
                                 (pjstadig.humane-test-output/activate!)]
