@@ -5,8 +5,8 @@
 }}
 
 PREFIX dbo:     <http://dbpedia.org/ontology/>
-PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
 PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos:    <http://www.w3.org/2004/02/skos/core#>
 
 SELECT ?subject
        ?label
@@ -14,30 +14,19 @@ SELECT ?subject
        (GROUP_CONCAT(DISTINCT ?surfaceForm ; separator = "|") AS ?surfaceForms)
 WHERE {
   {
-    SELECT ?subject ?label ?description
+    SELECT ?subject
     WHERE {
       {
         SELECT ?subject
-               (STR(SAMPLE(?_label)) AS ?label)
-               (STR(SAMPLE(?_description)) AS ?description) 
         WHERE {
-          GRAPH <http://dbpedia.org> {
+          GRAPH <http://dbpedia.org/db-quiz> {
             VALUES ?class {
               {{#selectors}}
               <{{{o}}}>
               {{/selectors}}
             }
             ?subject a ?class ;
-              rdfs:label ?_label ;
-              dbo:abstract ?_description .
-            FILTER (!REGEX(?_label, "^(\\p{Lu}\\.?)+$") {{! Filter out abbreviations, such as "R.E.M.". }}
-                    &&
-                    (STRLEN(?_description) > 140) {{! Get only resources with longer descriptions. }} 
-                    &&
-                    (STRLEN(?_label) < 30)) {{! Eliminate too long labels. }}
-          }
-          GRAPH <http://dbpedia.org/indegrees> {
-            ?subject dbo:wikiPageInDegree ?indegree .
+              dbo:wikiPageInDegree ?indegree .
           }
         }
         GROUP BY ?subject ?indegree
@@ -47,21 +36,10 @@ WHERE {
     LIMIT {{limit}}
     OFFSET {{offset}}
   }
-  OPTIONAL {
-    GRAPH <http://dbpedia.org> {
-      VALUES ?surfaceFormProperty {
-        dbo:alias
-        dbo:birthName
-        dbo:longName
-        dbo:name
-        dbo:otherName
-        dbo:wikiPageWikiLinkText
-        foaf:familyName
-        foaf:givenName
-        foaf:name
-      }
-      ?subject ?surfaceFormProperty ?surfaceForm .
-    }
+  GRAPH <http://dbpedia.org/db-quiz> {
+    ?subject rdfs:label ?label ;
+      dbo:abstract ?description ;
+      skos:altLabel ?surfaceForm .
   }
 }
 GROUP BY ?subject ?label ?description

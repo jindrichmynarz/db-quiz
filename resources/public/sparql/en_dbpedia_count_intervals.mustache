@@ -13,25 +13,14 @@ WHERE {
     SELECT ?subject (IF(?indegree > {{minimum-indegree}} && ?indegree < {{maximum-indegree}}, "normal",
                      IF(?indegree > {{maximum-indegree}}, "easy", "hard")) AS ?difficulty)
     WHERE {
-      GRAPH <http://dbpedia.org> {
+      GRAPH <http://dbpedia.org/db-quiz> {
         VALUES ?class {
           {{#selectors}}
           <{{{o}}}>
           {{/selectors}}
         }
         ?subject a ?class ;
-          rdfs:label ?_label ;
-          dbo:abstract ?_description .
-        FILTER (!REGEX(?_label, "^(\\p{Lu}\\.?)+$") {{! Filter out abbreviations, such as "R.E.M.". }}
-                &&
-                !REGEX(?_label, "^.*\\d+.*$") {{! Eliminate digits }}
-                &&
-                (STRLEN(?_description) > 140) {{! Get only resources with longer descriptions. }} 
-                &&
-                (STRLEN(?_label) < 30)) {{! Eliminate too long labels. }} 
-      }
-      GRAPH <http://dbpedia.org/indegrees> {
-        ?subject dbo:wikiPageInDegree ?indegree .
+          dbo:wikiPageInDegree ?indegree .
       }
     }
   }
