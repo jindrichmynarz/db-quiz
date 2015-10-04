@@ -153,13 +153,15 @@
   The group is labelled with label-key's value from the translation map.
   Values of the available buttons are given in options as a collection of [value label] pairs.
   Label can be either a string or a keyword that will be looked up in the translation map."
-  [id label-key options]
+  [id label-key options & {:keys [max-selected]}]
   (let [id-str (string/join "." (map name id))
         click (fn [current-id update-fn]
                 (swap! app-state (fn [state] (update-in state id #(update-fn % current-id)))))]
     (fn [id label-key options]
-      (let [current-value (get-in @app-state id)]
-        [:div.form-group
+      (let [current-value (get-in @app-state id)
+            can-select-more? (or (nil? max-selected)
+                                 (< (count current-value) max-selected))]
+        [:div.form-group 
          [label-element id-str (t label-key)]
          [:div.col-sm-8.btn-group-vertical {:id id-str
                                             :role "group"}
@@ -167,6 +169,7 @@
                        :let [active? (current-value current-id)
                              update-fn (if active? disj conj)]]
                    [:button {:class (btn-class-fn active?)
+                             :disabled (not (or active? can-select-more?))
                              :key label
                              :on-click (partial click current-id update-fn)}
                     (t label)]))]]))))
@@ -259,7 +262,8 @@
   (let [options [[:cs "Česky"]
                  [:en "English"]]
         click-fn (fn [language]
-                     (swap! app-state #(assoc % :language language))
+                     (swap! app-state (comp #(assoc-in % [:options :selectors] #{})
+                                            #(assoc % :language language)))
                      (.set cookies "language" (name language)))]
     (fn []
       (let [language (:language @app-state)]
@@ -306,7 +310,8 @@
       (let [language (:language @app-state)]
         [multi-select [:options :selectors]
                       :home.domains/label
-                      (language selectors)]))))
+                      (language selectors)
+                      :max-selected 3]))))
 
 (defn google-spreadsheet-options
   []
