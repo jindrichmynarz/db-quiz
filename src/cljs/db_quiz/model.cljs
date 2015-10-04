@@ -30,12 +30,14 @@
   "Gets limiting indegrees from an exponential distribution. 
   `max-count` is the number of instances in the distribution,
   `angle` is the angle of the tangent of the distribution, where the limiting indegree is computed,  
-  `b-param` determines the shape of the exponential distribution."
+  `b-param` determines the shape of the exponential distribution.
+  The result is rounded to 2 decimal places."
   (let [b-param (get-in config [:data :sparql :difficulty-distribution :params :b])] 
     (fn [max-count angle]
-      (/ (js/Math.log (- (/ (* max-count b-param)
+      (/ (js/Math.round (* (/ (js/Math.log (- (/ (* max-count b-param)
                             (js/Math.tan (degrees->radians angle)))))
-         b-param))))
+                           b-param) 100))
+         100))))
 
 ; ----- Public functions -----
 
@@ -53,7 +55,7 @@
                               ; we need to use Virtuoso-specific query parameter `format`.
                               :format "application/sparql-results+json"
                               :query query
-                              :timeout 60000}}))
+                              :timeout 200000}}))
 
 (defn wrap-load
   [input-channel output-channel]
