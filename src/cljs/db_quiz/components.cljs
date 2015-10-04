@@ -284,19 +284,24 @@
   []
   (let [selectors {:cs [[:persons :home.domains/persons]
                         [:places :home.domains/places]
+                        [:films :home.domains/films]
                         [:works :home.domains/works]
                         [:born-in-brno :home.domains/born-in-brno]
                         [:ksc-members :home.domains/ksc-members]
                         [:uncertain-death :home.domains/uncertain-death]
                         [:artists :home.domains/artists]
                         [:politicians :home.domains/politicians]
-                        [:musicians :home.domains/musicians]
-                        [:films :home.domains/films]]
+                        [:musicians :home.domains/musicians]]
                    :en [[:persons :home.domains/persons]
                         [:places :home.domains/places]
+                        [:films :home.domains/films]
                         [:companies :home.domains/companies]
                         [:software :home.domains/software]
-                        [:languages :home.domains/languages]]}]
+                        [:plants :home.domains/plants]
+                        [:languages :home.domains/languages]
+                        [:musicians :home.domains/musicians]
+                        [:insects :home.domains/insects]
+                        [:soccer-players :home.domains/soccer-players]]}]
     (fn []
       (let [language (:language @app-state)]
         [multi-select [:options :selectors]
@@ -311,8 +316,7 @@
 (defn dbpedia-options
   []
   [:div [selector-picker]
-        [difficulty-picker]
-        [field-labelling]])
+        [difficulty-picker]])
 
 (def advanced-options
   (let [id [:options :data-source]
