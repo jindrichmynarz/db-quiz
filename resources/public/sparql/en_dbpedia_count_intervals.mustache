@@ -1,0 +1,39 @@
+{{!
+@param Array<Array<URI, URI>> selectors
+@param float                  maximum-indegree
+@param float                  minimum-indegree
+}}
+
+PREFIX dbo:     <http://dbpedia.org/ontology/>
+PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?difficulty (COUNT(?subject) AS ?size)
+WHERE {
+  {
+    SELECT ?subject (IF(?indegree > {{minimum-indegree}} && ?indegree < {{maximum-indegree}}, "normal",
+                     IF(?indegree > {{maximum-indegree}}, "easy", "hard")) AS ?difficulty)
+    WHERE {
+      GRAPH <http://dbpedia.org> {
+        VALUES ?class {
+          {{#selectors}}
+          <{{{o}}}>
+          {{/selectors}}
+        }
+        ?subject a ?class ;
+          rdfs:label ?_label ;
+          dbo:abstract ?_description .
+        FILTER (!REGEX(?_label, "^(\\p{Lu}\\.?)+$") {{! Filter out abbreviations, such as "R.E.M.". }}
+                &&
+                !REGEX(?_label, "^.*\\d+.*$") {{! Eliminate digits }}
+                &&
+                (STRLEN(?_description) > 140) {{! Get only resources with longer descriptions. }} 
+                &&
+                (STRLEN(?_label) < 30)) {{! Eliminate too long labels. }} 
+      }
+      GRAPH <http://dbpedia.org/indegrees> {
+        ?subject dbo:wikiPageInDegree ?indegree .
+      }
+    }
+  }
+}
+GROUP BY ?difficulty

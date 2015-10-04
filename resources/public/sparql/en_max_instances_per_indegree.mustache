@@ -1,0 +1,31 @@
+{{!
+@param Array<Array<URI, URI>> selectors
+}}
+
+PREFIX dbo: <http://dbpedia.org/ontology/>
+
+SELECT (MAX(?count) AS ?maxCount)
+WHERE {
+  {
+    SELECT (COUNT(?subject) AS ?count)
+    WHERE {
+      {
+        SELECT ?subject ?indegree 
+        WHERE {
+          GRAPH <http://dbpedia.org> {
+            VALUES (?p ?o) {
+              {{#selectors}}
+              (<{{{p}}}> <{{{o}}}>)
+              {{/selectors}}
+            }
+            ?subject ?p ?o .
+          }
+          GRAPH <http://dbpedia.org/indegrees> {
+            ?subject dbo:wikiPageInDegree ?indegree .
+          }
+        }
+      }
+    }
+    GROUP BY ?indegree
+  }
+}

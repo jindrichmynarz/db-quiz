@@ -28,17 +28,17 @@
                                              :split-angles {:easy 179
                                                             :normal 135}}
                    :endpoint-urls {:cs "http://cs.dbpedia.org/sparql"
-                                   :en "http://dbpedia.org/sparql"}
+                                   :en "http://lod2.vse.cz:8890/sparql"}
                    ; Maximum number of results per query
                    :page-size 5000
                    :query-files {:cs {:alphabetic "sparql/cs_dbpedia_az.mustache"
                                       :difficulty-intervals "sparql/cs_dbpedia_count_intervals.mustache"
-                                      :max-instance-count "sparql/max_instances_per_indegree.mustache"
+                                      :max-instance-count "sparql/cs_max_instances_per_indegree.mustache"
                                       :numeric "sparql/cs_dbpedia.mustache"}
                                  :en {:alphabetic ""
-                                      :difficulty-intervals ""
-                                      :max-instance-count ""
-                                      :numeric ""}}}}
+                                      :difficulty-intervals "sparql/en_dbpedia_count_intervals.mustache"
+                                      :max-instance-count "sparql/en_max_instances_per_indegree.mustache"
+                                      :numeric "sparql/en_dbpedia.mustache"}}}}
    ; Similarity threshold required for the guess to match the correct answer
    :guess-similarity-threshold 0.94
    :layout {; Width of hexagon's border (in pixels)
@@ -65,6 +65,8 @@
                            :o (dbo "Company")} 
                :films {:p rdf-type
                        :o (dbo "Film")}
+               :insects {:p rdf-type
+                         :o (dbo "Insect")}
                :ksc-members {:p dcterms-subject
                              :o (cs-category "Členové_KSČ")}
                :languages {:p rdf-type
@@ -75,8 +77,12 @@
                          :o (dbo "Person")}
                :places {:p rdf-type
                         :o (dbo "Place")}
+               :plants {:p rdf-type
+                        :o (dbo "Plant")}
                :politicians {:p rdf-type
                              :o (dbo "Politician")}
+               :soccer-players {:p rdf-type
+                                :o (dbo "SoccerPlayer")}
                :software {:p rdf-type
                           :o (dbo "Software")}
                :uncertain-death {:p dcterms-subject

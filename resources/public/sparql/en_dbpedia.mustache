@@ -1,0 +1,67 @@
+{{!
+@param Array<Array<URI, URI>> selectors
+@param int                    limit
+@parem int                    offset
+}}
+
+PREFIX dbo:     <http://dbpedia.org/ontology/>
+PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
+PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?subject
+       ?label
+       ?description
+       (GROUP_CONCAT(DISTINCT ?surfaceForm ; separator = "|") AS ?surfaceForms)
+WHERE {
+  {
+    SELECT ?subject ?label ?description
+    WHERE {
+      {
+        SELECT ?subject
+               (STR(SAMPLE(?_label)) AS ?label)
+               (STR(SAMPLE(?_description)) AS ?description) 
+        WHERE {
+          GRAPH <http://dbpedia.org> {
+            VALUES ?class {
+              {{#selectors}}
+              <{{{o}}}>
+              {{/selectors}}
+            }
+            ?subject a ?class ;
+              rdfs:label ?_label ;
+              dbo:abstract ?_description .
+            FILTER (!REGEX(?_label, "^(\\p{Lu}\\.?)+$") {{! Filter out abbreviations, such as "R.E.M.". }}
+                    &&
+                    (STRLEN(?_description) > 140) {{! Get only resources with longer descriptions. }} 
+                    &&
+                    (STRLEN(?_label) < 30)) {{! Eliminate too long labels. }}
+          }
+          GRAPH <http://dbpedia.org/indegrees> {
+            ?subject dbo:wikiPageInDegree ?indegree .
+          }
+        }
+        GROUP BY ?subject ?indegree
+        ORDER BY DESC(?indegree)
+      }
+    }
+    LIMIT {{limit}}
+    OFFSET {{offset}}
+  }
+  OPTIONAL {
+    GRAPH <http://dbpedia.org> {
+      VALUES ?surfaceFormProperty {
+        dbo:alias
+        dbo:birthName
+        dbo:longName
+        dbo:name
+        dbo:otherName
+        dbo:wikiPageWikiLinkText
+        foaf:familyName
+        foaf:givenName
+        foaf:name
+      }
+      ?subject ?surfaceFormProperty ?surfaceForm .
+    }
+  }
+}
+GROUP BY ?subject ?label ?description
