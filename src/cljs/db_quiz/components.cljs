@@ -114,9 +114,11 @@
 
 (defn menu
   "Fixed information & navigazion menu"
-  []
+  [& {:keys [home?]
+      :or {home? false}}]
   [:div#info-menu.btn-group {:role "group"}
-   [:a.btn.btn-default {:href "#"} [:span.glyphicon.glyphicon-home.glyphicon-start] (t :labels/home)]
+   (when-not home?
+     [:a.btn.btn-default {:href "#"} [:span.glyphicon.glyphicon-home.glyphicon-start] (t :labels/home)])
    [:button.btn.btn-default {:on-click #(reagent-modals/modal! (modals/game-info) {:size :lg})}
     [:span.glyphicon.glyphicon-info-sign.glyphicon-start] (t :labels/about)]])
 
@@ -320,8 +322,7 @@
 
 (defn dbpedia-options
   []
-  [:div [selector-picker]
-        [difficulty-picker]])
+  [:div [selector-picker]])
 
 (def advanced-options
   (let [id [:options :data-source]
@@ -352,7 +353,8 @@
   [:div
    [language-picker]
    [player-form-field :player-1 :home/player-1]
-   [player-form-field :player-2 :home/player-2]])
+   [player-form-field :player-2 :home/player-2]
+   [difficulty-picker]])
 
 (def start-menu
   (let [options-hidden (atom true)]
@@ -390,7 +392,7 @@
   (fn []
     [:div.container-fluid
      [loading-indicator]
-     [menu]
+     [menu :home? true]
      [:div#logo [:img {:alt (t :labels/logo)
                        :src "img/logo.svg"}]]
      [start-menu]
