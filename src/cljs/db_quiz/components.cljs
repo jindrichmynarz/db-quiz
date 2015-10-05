@@ -487,9 +487,10 @@
                          [:div#verdict.row {:data-placement "bottom"
                                             :title (t :tooltips/verdict)}
                           [:div.col-sm-12
-                           [:p {:class (join-by-space "alert" verdict-class)}
-                            [icon]
-                            success ". " (t :play/correct-answer) " " [:strong correct-answer] "."]]]))}))
+                           [:div {:class (join-by-space "alert" verdict-class)}
+                            [:p [icon]
+                              success ". " (t :play/correct-answer) " " [:strong correct-answer] "."]
+                            [:div.progress-bar]]]]))}))
 
 (defn question-box
   "Box for presenting the question with given id."
