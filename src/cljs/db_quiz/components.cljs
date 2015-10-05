@@ -322,7 +322,8 @@
 
 (defn dbpedia-options
   []
-  [:div [selector-picker]])
+  [:div [selector-picker]
+        [difficulty-picker]])
 
 (def advanced-options
   (let [id [:options :data-source]
@@ -353,8 +354,7 @@
   [:div
    [language-picker]
    [player-form-field :player-1 :home/player-1]
-   [player-form-field :player-2 :home/player-2]
-   [difficulty-picker]])
+   [player-form-field :player-2 :home/player-2]])
 
 (def start-menu
   (let [options-hidden (atom true)]
