@@ -18,8 +18,8 @@
 (defn report-spoiler
   "Send a custom event to Google Analytics"
   []
-  (let [{{:keys [despoilerify? language]} :options
-         :keys [board current-field]} @app-state
+  (let [{{:keys [despoilerify?]} :options
+         :keys [board current-field language]} @app-state
         subject-uri (get-in board [current-field :subject])]
     (ga "send" "event" "report-spoiler" subject-uri (str (name language) "-"
                                                          (if despoilerify? "true" "false")))))
