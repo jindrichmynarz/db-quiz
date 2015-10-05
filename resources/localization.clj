@@ -35,7 +35,8 @@
       :labels {:about "O hře"
                :home "Domů"
                :loading "Načítání"
-               :logo "Logo DB-quizu"}
+               :logo "Logo DB-quizu"
+               :not-found "Ouha, stránka nenalezena!"}
       :messages {:no-difficulty-selected "Musí být zvolena obtížnost."
                  :no-domain-selected "Alespoň 1 druh otázek musí být zvolen."
                  :no-field-labelling-selected "Musí být zvolen způsob označování políček."
@@ -123,7 +124,8 @@ Zvolte *File* → *Publish to the web...* a klikněte na *Publish*."
       :labels {:about "About the game"
                :home "Home"
                :loading "Loading"
-               :logo "DB-quiz logo"}
+               :logo "DB-quiz logo"
+               :not-found "Crikey! The page was not found."}
       :messages {:no-difficulty-selected "A game difficulty must be chosen."
                  :no-domain-selected "At least 1 domain of questions must be chosen"
                  :no-field-labelling-selected "A way fields are labelled must be chosen."

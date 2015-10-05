@@ -568,3 +568,12 @@
           [:h1 {:class (name player)} winner-name]]
          [:h1 (t :end/no-winner)])
        [:a.button {:href (or share-url "")} [:span (t :end/play-again)]]])))
+
+; ----- Not found -----
+
+(defn not-found
+  []
+  [:div
+   [menu]
+   [svg/not-found] 
+   [:h1 (t :labels/not-found)]])

@@ -15,9 +15,6 @@
 
 (secretary/set-config! :prefix "#")
 
-(defn play-page []
-  [components/play-page])
-
 (defn current-page []
   [:div [(session/get :current-page)]])
 
@@ -31,7 +28,10 @@
   (session/put! :current-page components/end-page))
 
 (defroute "/play" []
-  (session/put! :current-page play-page))
+  (session/put! :current-page components/play-page))
+
+(defroute "*" []
+  (session/put! :current-page components/not-found))
 
 ;; -------------------------
 ;; History

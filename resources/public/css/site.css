@@ -402,3 +402,24 @@ td {
   -o-transform-origin: 50% 50%;
   transform-origin: 50% 50%;
 }
+
+#not-found {
+  -webkit-animation: pulsate ease-out 1s;
+  animation: pulsate ease-out 1s;
+}
+
+@-webkit-keyframes pulsate {
+  0% {-webkit-transform: scale(0.1, 0.1); opacity: 0.0;}
+  100% {-webkit-transform: scale(1, 1); opacity: 1.0;}
+}
+
+@keyframes pulsate {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.0;
+  }
+  100% {
+    transform: scale(1, 1);
+    opacity: 1.0;
+  }
+}
