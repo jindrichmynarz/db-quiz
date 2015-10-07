@@ -463,8 +463,7 @@
                        [:div.row {:data-placement "bottom"
                                   :title (t :tooltips/timeout)}
                         [:div#timeout {:class (name on-turn)}]
-                        [:div#timeout-shade {:style {:margin-left (str completion "%")
-                                                     :width (str (- 100 completion) "%")}}]])}))
+                        [:div#timeout-shade {:class (if (pos? completion) "active" "")}]])}))
 
 (defn verdict-component
   "Show verdict if answer was correct or not."

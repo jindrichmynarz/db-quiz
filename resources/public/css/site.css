@@ -311,12 +311,21 @@ td {
   margin-top: -5px;
   margin-left: 0%;
   width: 100%;
-  /* Smoothing animation via CSS transition */
-  -moz-transition: all 1s; 
-  -webkit-transition: all 1s;  
-  -ms-transition: all 1s;  
-  -o-transition: all 1s;  
-  transition: all 1s;
+}
+
+#timeout-shade.active {
+  animation: timeoutProgress 45s linear;
+}
+
+@keyframes timeoutProgress {
+  0%  {
+    width: 100%;
+    left: 0%;
+  }
+  100% {
+    width: 0%;
+    left: 100%;
+  }
 }
 
 #timeout.player-1 {

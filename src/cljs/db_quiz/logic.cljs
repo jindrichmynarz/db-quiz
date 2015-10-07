@@ -243,7 +243,7 @@
                           (do (swap! app-state #(assoc-in %
                                                           [:timer :completion]
                                                           (/ (- (.getTime (js/Date.)) start)
-                                                              (* 10 time-to-guess))))
+                                                             (* 10 time-to-guess))))
                               (when (and (nil? hint) (> completion 50) (or (nil? answer) (= answer "")))
                                 (swap! app-state #(assoc % :hint (generate-hint correct-answer)))))
                           (make-a-guess)))))
