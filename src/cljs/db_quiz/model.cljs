@@ -13,6 +13,17 @@
 
 ; ----- Private functions -----
 
+(defn- round
+  "Round a `number` to a given `precision` decimal places." 
+  [precision number]
+  (let [rounding-factor (js/Math.pow 10 precision)]
+    (/ (js/Math.round (* number rounding-factor))
+       rounding-factor)))
+
+(def ^:private round-2
+  "Round to 2 decimal places"
+  (partial round 2))
+
 (def ^:private degrees->radians
   "Convert angle in degrees to radians"
   (partial * (/ js/Math.PI 180)))
@@ -34,10 +45,9 @@
   The result is rounded to 2 decimal places."
   (let [b-param (get-in config [:data :sparql :difficulty-distribution :params :b])] 
     (fn [max-count angle]
-      (/ (js/Math.round (* (/ (js/Math.log (- (/ (* max-count b-param)
-                            (js/Math.tan (degrees->radians angle)))))
-                           b-param) 100))
-         100))))
+      (round-2 (/ (js/Math.log (- (/ (* max-count b-param)
+                                     (js/Math.tan (degrees->radians angle)))))
+                  b-param)))))
 
 ; ----- Public functions -----
 
