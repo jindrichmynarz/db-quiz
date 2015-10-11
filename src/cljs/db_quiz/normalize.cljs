@@ -271,7 +271,7 @@
                       (if (> (count a) maximum-length)
                           a
                           (str a ". " b)))
-                    (split description #"\.\s+"))
+                    (split description #"\.\s+(?=[A-ZÁČĎÉÍŇÓŘŠŤÚŽ])"))
             :else description)
       description)))
 
