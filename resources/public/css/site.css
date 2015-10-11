@@ -5,19 +5,13 @@ html {
 
 body {
   font-family: Voces, "Helvetica Neue", Helvetica, Arial, sans-serif;
-  max-width: 1000px;
   margin: 0 auto;
   padding-top: 12px;
   -webkit-font-smoothing: antialiased;
   color: #333;
   line-height: 1.5em;
   text-align: center;
-}
-
-#body {
-  position: relative;
-  min-height: 100%;
-  margin-bottom: 50px;
+  padding-bottom: 75px;
 }
 
 h1, h2, h3 {
@@ -107,6 +101,20 @@ a:hover {
 .form-control:focus {
   border-color: #354d65;
   box-shadow: inset 0 1px 1px rgba(44, 62, 80, 0.075), 0 0 8px rgba(44, 62, 80, 0.6);
+}
+
+#cookies-warning {
+  z-index: 10;
+  position: absolute;
+  bottom: 0;
+  background: #eee;
+  height: 65px;
+  width: 100%;
+  padding: 1em;
+}
+
+#cookies-warning button {
+  margin-left: 1em;
 }
 
 #loading {

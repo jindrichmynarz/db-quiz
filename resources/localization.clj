@@ -2,6 +2,8 @@
             :play-again "Hrát znovu"
             :winner "Vítězem se stává"}
       :home {:advanced-options "Pokročilé nastavení"
+             :cookies {:warning "Tato hra využívá soubory cookies. Pokračováním souhlasíte s užitím cookies."
+                       :proceed-button "Pokračovat"}
              :data-source "Zvolte zdroj otázek:"
              :dbpedia "DBpedie"
              :difficulty {:easy "Jednoduchá"
@@ -88,6 +90,8 @@ Zvolte *File* → *Publish to the web...* a klikněte na *Publish*."
             :play-again "Play again"
             :winner "The winner is"}
       :home {:advanced-options "Advanced options"
+             :cookies {:warning "This game uses cookies. By continuing you agree with the use of cookies."
+                       :proceed-button "Continue"}
              :data-source "Choose a data source:"
              :dbpedia "DBpedia"
              :difficulty {:easy "Easy"

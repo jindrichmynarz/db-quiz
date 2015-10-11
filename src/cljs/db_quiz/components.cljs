@@ -178,6 +178,21 @@
 
 ; ----- Home page -----
 
+(defn cookies-warning
+  "Display warning about the use of cookies."
+  []
+  (let [cookies? (.get cookies "cookies")
+        hidden? (atom false)
+        hide (fn [_] (reset! hidden? true)
+                     (.set cookies "cookies" "true"))]
+    (fn []
+      (when-not (or cookies? @hidden?)
+        [:div#cookies-warning
+         [:p (t :home.cookies/warning) 
+          [:button.btn.btn-default {:on-click hide}
+           [:span.glyphicon.glyphicon-start.glyphicon-chevron-right]
+           (t :home.cookies/proceed-button)]]]))))
+
 (defn loading-indicator
   "Indicates if data is loaded."
   []
@@ -270,7 +285,7 @@
     (fn []
       (let [language (:language @app-state)]
         [:div.form-group
-         [:div.btn-group.col-sm-3.col-sm-offset-9 {:role "group"}
+         [:div.btn-group.col-sm-4.col-sm-offset-9 {:role "group"}
           (doall (for [[id label] options
                        :let [active? (= id language)]]
                    [:button {:class (btn-class-fn active?)
@@ -361,7 +376,7 @@
     (set-defaults!)
     (fn []
       (annull-game!)
-      [:div.col-sm-8.col-sm-offset-2
+      [:div.col-sm-6.col-sm-offset-3
        [:div#start-menu.form-horizontal.row
         [basic-options]
         [:div#advanced
@@ -390,13 +405,15 @@
   []
   (analytics/send-page-view "/")
   (fn []
-    [:div.container-fluid
-     [loading-indicator]
-     [menu :home? true]
-     [:div#logo [:img {:alt (t :labels/logo)
-                       :src "img/logo.svg"}]]
-     [start-menu]
-     [reagent-modals/modal-window]]))
+    [:div
+     [:div.container-fluid
+      [loading-indicator]
+      [menu :home? true]
+      [:div#logo [:img {:alt (t :labels/logo)
+                        :src "img/logo.svg"}]]
+      [start-menu]]
+     [reagent-modals/modal-window]
+     [cookies-warning]]))
 
 ; ----- Play page -----
 
@@ -521,7 +538,7 @@
   "Show the name of the player, whose turn it currently is."
   []
   (let [{{:keys [completion start]} :timer
-         :keys [on-turn players]} @app-state
+         :keys [on-turn players verdict]} @app-state
         player-name (on-turn players)
         [trimmed-name font-class] (trim-player-name player-name)]
     [:div
@@ -529,7 +546,7 @@
         [:div#on-turn {:class (join-by-space (name on-turn) font-class)}
           trimmed-name
           (when (= player-name "Rybička") [canvas/easter-egg on-turn])]]
-      [timeout on-turn completion]]))
+      (when (nil? verdict) [timeout on-turn completion])]))
 
 (defn play-page
   []
@@ -542,8 +559,8 @@
         [:div.container-fluid
          [menu]
          [:div.row
-          [:div.col-sm-6 [svg/hex-triangle]]
-          [:div#question-box.col-sm-6
+          [:div.col-sm-5.col-sm-offset-1 [svg/hex-triangle]]
+          [:div#question-box.col-sm-5
            [player-on-turn]
            (when current-field
              [question-box current-field])]]
