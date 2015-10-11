@@ -460,7 +460,7 @@
     {:component-did-mount (partial mount-tooltip "timeout")
      :display-name "timeout"
      :reagent-render (fn [on-turn completion]
-                       [:div.row {:data-placement "bottom"
+                       [:div.row {:data-placement "left"
                                   :title (t :tooltips/timeout)}
                         [:div#timeout {:class (name on-turn)}]
                         [:div#timeout-shade {:class (if (pos? completion) "active" "")}]])}))
