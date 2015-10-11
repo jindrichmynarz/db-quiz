@@ -472,15 +472,17 @@
 
 (defn timeout
   "Progress bar showing the ellapsed time from player's turn."
-  [on-turn completion]
+  [on-turn completion & {:keys [verdict?]}]
   (reagent/create-class
     {:component-did-mount (partial mount-tooltip "timeout")
      :display-name "timeout"
-     :reagent-render (fn [on-turn completion]
+     :reagent-render (fn [on-turn completion & {:keys [verdict?]}]
                        [:div.row {:data-placement "left"
                                   :title (t :tooltips/timeout)}
                         [:div#timeout {:class (name on-turn)}]
-                        [:div#timeout-shade {:class (if (pos? completion) "active" "")}]])}))
+                        [:div#timeout-shade {:class (if (and (not verdict?) (pos? completion))
+                                                        "active"
+                                                        "")}]])}))
 
 (defn verdict-component
   "Show verdict if answer was correct or not."
@@ -546,7 +548,7 @@
         [:div#on-turn {:class (join-by-space (name on-turn) font-class)}
           trimmed-name
           (when (= player-name "Rybička") [canvas/easter-egg on-turn])]]
-      (when (nil? verdict) [timeout on-turn completion])]))
+      [timeout on-turn completion :verdict? (not (nil? verdict))]]))
 
 (defn play-page
   []
