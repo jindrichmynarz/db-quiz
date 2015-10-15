@@ -7,7 +7,7 @@
 (def ^:private lowercase
   "Regular expression for lowercase characters.
   (Since JavaScript lacks Unicode character classes)"
-  "[a-záčďéíňóöřšťúž]")
+  "[a-záčďéíňóöřšťúž\\.]")
 
 (def ^:private uppercase
   "Regular expression for uppercase characters."
