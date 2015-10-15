@@ -464,3 +464,63 @@ td {
     opacity: 1.0;
   }
 }
+
+.btn-hex {
+  position: relative;
+  width: 50px; 
+  height: 28.87px;
+  background-color: #eee;
+  margin: 14.43px 2px;
+  display: inline-block;
+}
+
+.btn-hex:before, .btn-hex:after {
+  content: "";
+  position: absolute;
+  width: 0;
+  margin-left: -25px;
+  border-left: 25px solid transparent;
+  border-right: 25px solid transparent;
+}
+
+.btn-hex:before {
+  bottom: 100%;
+  border-bottom: 14.43px solid #eee;
+}
+
+.btn-hex:after {
+  top: 100%;
+  width: 0;
+  border-top: 14.43px solid #eee;
+}
+
+.btn-hex span {
+  font-size: 2em;
+  width: 20px;
+  height: 20px;
+  margin: 0 -10px;
+}
+
+#social-media {
+  padding-top: 30px;
+}
+
+#social-media h3 {
+  padding-bottom: 2em;
+}
+
+#social-media a {
+  color: #354d65;
+}
+
+#social-media a:hover, #social-media a:focus {
+  color: #5a86b1;
+}
+
+#social-media a:nth-child(odd) {
+  top: -45.43px;
+}
+
+#social-media a:not(:first-child) {
+  margin-left: -26px;
+}

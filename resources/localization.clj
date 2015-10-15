@@ -1,5 +1,7 @@
 {:cs {:end {:no-winner "Kdo nehraje, nevyhraje."
             :play-again "Hrát znovu"
+            :share-victory "Sdílej svou výhru:"
+            :status "Vítězství v DB-quizu je mé!"
             :winner "Vítězem se stává"}
       :home {:advanced-options "Pokročilé nastavení"
              :cookies {:warning "Tato hra využívá soubory cookies. Pokračováním souhlasíte s užitím cookies."
@@ -55,14 +57,14 @@ Hra je založena na známé televizní soutěži [AZ-kvíz](https://cs.wikipedia
 V případě DB-quizu jsou herní otázky náhodně generovány na základě databáze. Ve hře jsou jako databáze použity sémantické podoba české a anglické Wikipedie, která jsou vytvářena v projektu [DBpedia](http://dbpedia.org/). Alternativně lze použít otázky z tabulek v Google Spreadsheets.
 
 Otázky ve hře jsou generovány automaticky, takže se může stát, že v nich bude prozrazena hádaná odpověď. V takovém případě prosím otázku nahlašte pomocí tlačítka 'Nahlásit spoiler'.
- 
+
 Hru na [Vysoké škole ekonomické](http://www.vse.cz/) dali dohromady [Jindřich Mynarz](http://mynarz.net/#jindrich) a Václav Zeman s pomocí přátel. Zdrojový kód hry je k dispozici [zde](https://github.com/jindrichmynarz/db-quiz)."
                :google-spreadsheet-help* "## Jak má tabulka vypadat? ##
 
 Tabulka musí mít 2 sloupce, záhlaví a alespoň tolik řádků, kolik je hracích políček. Ve sloupci pojmenovaném 'Label' jsou názvy hádaných věcí, zatímco ve sloupci se jménem 'Description' jsou otázky popisující hádanou věc.
- 
+
 ## Jak tabulku publikovat? ##
- 
+
 Zvolte *File* → *Publish to the web...* a klikněte na *Publish*."
                :invalid-number-of-results! "Načteno nesprávné množství dat. Hra potřebuje {{expected}} položek, ale jen {{actual}} bylo načteno. Zkuste rozšířit okruhy otázek."
                :invalid-options "Chyby v nastavení"
@@ -88,6 +90,8 @@ Zvolte *File* → *Publish to the web...* a klikněte na *Publish*."
                  :verdict "Verdikt lze zavřít stisknutím Enteru."}}
  :en {:end {:no-winner "Who plays, wins."
             :play-again "Play again"
+            :share-victory "Share your victory:"
+            :status "I won in DB-quiz!"
             :winner "The winner is"}
       :home {:advanced-options "Advanced options"
              :cookies {:warning "This game uses cookies. By continuing you agree with the use of cookies."
@@ -143,7 +147,7 @@ DB-quiz is based on TV show [AZ-kvíz](https://cs.wikipedia.org/wiki/AZ-kv%C3%AD
 
 ## How does the game work? ##
 
-DB-quiz generates game questions randomly from a database. The game uses the semantic forms of Czech and English Wikipedias that are created as part of [DBpedia](http://dbpedia.org/). Google Spreadsheet can be used as an alternative source of questions. 
+DB-quiz generates game questions randomly from a database. The game uses the semantic forms of Czech and English Wikipedias that are created as part of [DBpedia](http://dbpedia.org/). Google Spreadsheet can be used as an alternative source of questions.
 
 Questions in the game are generated automatically, so they may inadvertently reveal the correct answers. If you encounter such question, please report it using the 'Report spoiler' button.
 
@@ -151,7 +155,7 @@ The game was created at the [University of Economics, Prague](http://www.vse.cz/
                :google-spreadsheet-help* "## How should I format the spreadsheet? ##
 
 A spreadsheet that can be used as a data source for DB-quiz needs to contain columns named *Label* and *Description*. *Label* provides the correct answers, while *Description* provides the questions describing the things to be guessed. A valid spreadsheet must contain a header row with the column labels and at least 28 rows, so that there is a question for each field on the game board. When the spreadsheet contains more rows, then 28 rows are selected randomly.
- 
+
 ## How to publish the spreadsheet? ##
 
 The spreadsheet needs to be published before it can be read by DB-quiz. To do so, go to *File* → *Publish to the web...* and click *Publish*."

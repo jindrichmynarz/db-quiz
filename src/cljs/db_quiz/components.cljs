@@ -11,6 +11,7 @@
             [db-quiz.i18n :refer [t]]
             [db-quiz.analytics :as analytics]
             [clojure.string :as string]
+            [cljs-http.client :refer [generate-query-string]]
             [goog.net.Cookies]
             [reagent.core :as reagent :refer [atom]]
             [reagent-modals.modals :as reagent-modals]))
@@ -163,7 +164,7 @@
       (let [current-value (get-in @app-state id)
             can-select-more? (or (nil? max-selected)
                                  (< (count current-value) max-selected))]
-        [:div.form-group 
+        [:div.form-group
          [label-element id-str (t label-key)]
          [:div.col-sm-8.btn-group-vertical {:id id-str
                                             :role "group"}
@@ -188,7 +189,7 @@
     (fn []
       (when-not (or cookies? @hidden?)
         [:div#cookies-warning
-         [:p (t :home.cookies/warning) 
+         [:p (t :home.cookies/warning)
           [:button.btn.btn-default {:on-click hide}
            [:span.glyphicon.glyphicon-start.glyphicon-chevron-right]
            (t :home.cookies/proceed-button)]]]))))
@@ -421,7 +422,7 @@
   "Button for reporting spoilers in questions."
   []
   (let [reported? (atom false)]
-    (reagent/create-class 
+    (reagent/create-class
       {:component-did-mount (partial mount-tooltip "report-spoiler")
        :display-name "report-spoiler"
        :reagent-render (fn []
@@ -570,6 +571,43 @@
 
 ; ----- End page -----
 
+(defn facebook-button
+  "Button to send a Facebook status about your game victories."
+  [url]
+  (let [app-id (if (zero? (.indexOf url "http://localhost")) "873059332790811" "873050382791706")]
+     [:a.btn-hex {:href (str "https://www.facebook.com/dialog/feed/?"
+                             (generate-query-string {:app_id app-id
+                                                     :display "page"
+                                                     :name "DB-quiz"
+                                                     :caption (t :end/status)
+                                                     :link url
+                                                     :redirect_uri url}))}
+      [:span.glyphicon.fa.fa-facebook]]))
+
+(defn google+button
+  "Button to share the game on Google+."
+  [url]
+  [:a.btn-hex {:href (str "https://plus.google.com/share?" (generate-query-string {:url url}))}
+   [:span.glyphicon.fa.fa-google-plus]])
+
+(defn tweet-button
+  "Button to tweet about game victories."
+  [url]
+  (let [text (str (t :end/status) " " url)]
+    [:a.btn-hex {:href (str "https://twitter.com/intent/tweet?" (generate-query-string {:text text}))}
+     [:span.glyphicon.fa.fa-twitter]]))
+
+(defn social-media-buttons
+  "Buttons for sharing the game on social media."
+  []
+  (let [pathname js/window.location.pathname
+        url (str js/window.location.origin (when-not (= pathname "/") pathname))]
+    [:div#social-media
+     [:h3 (t :end/share-victory)]
+     [:div [tweet-button url]
+           [google+button url]
+           [facebook-button url]]]))
+
 (defn end-page
   []
   (analytics/send-page-view "/end")
@@ -584,7 +622,8 @@
          [:div#winner
           [svg/winners-cup (get-in config [:colours player])]
           [:h3 (t :end/winner)]
-          [:h1 {:class (name player)} winner-name]]
+          [:h1 {:class (name player)} winner-name]
+          [social-media-buttons]]
          [:h1 (t :end/no-winner)])
        [:a.button {:href (or share-url "")} [:span (t :end/play-again)]]])))
 
@@ -594,5 +633,5 @@
   []
   [:div
    [menu]
-   [svg/not-found] 
+   [svg/not-found]
    [:h1 (t :labels/not-found)]])
