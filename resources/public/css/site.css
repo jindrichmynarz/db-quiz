@@ -12,6 +12,7 @@ body {
   line-height: 1.5em;
   text-align: center;
   padding-bottom: 75px;
+  perspective: 1200px;
 }
 
 h1, h2, h3 {
@@ -322,10 +323,10 @@ td {
 }
 
 #timeout-shade.active {
-  animation: timeoutProgress 45s linear;
+  animation: timeout-progress 45s linear;
 }
 
-@keyframes timeoutProgress {
+@keyframes timeout-progress {
   0%  {
     width: 100%;
     left: 0%;
@@ -445,22 +446,17 @@ td {
 }
 
 #not-found {
-  -webkit-animation: pulsate ease-out 1s;
-  animation: pulsate ease-out 1s;
+  animation: appear ease-out 2s;
+  transform-style: preserve-3d;
 }
 
-@-webkit-keyframes pulsate {
-  0% {-webkit-transform: scale(0.1, 0.1); opacity: 0.0;}
-  100% {-webkit-transform: scale(1, 1); opacity: 1.0;}
-}
-
-@keyframes pulsate {
+@keyframes appear {
   0% {
-    transform: scale(0, 0);
+    transform: scale(0, 0) rotateY(0deg);
     opacity: 0.0;
   }
   100% {
-    transform: scale(1, 1);
+    transform: scale(1, 1) rotateY(-360deg);
     opacity: 1.0;
   }
 }
