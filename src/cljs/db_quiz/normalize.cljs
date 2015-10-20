@@ -48,7 +48,7 @@
   It needs to have 2 capitalized words, e.g., 'Aaaa Aaaaaa'."
   (let [name-regex (re-pattern (str "^" uppercase lowercase "+\\s+" uppercase lowercase "+$"))]
     (fn [text]
-      (re-matches name-regex text))))
+      (not (nil? (re-matches name-regex text))))))
 
 (def name->regex
   "Convert a name into a regular expression that matches it with a middle name added."
@@ -57,7 +57,7 @@
     (fn [text]
       (let [[first-name last-name] (take 2 (tokenize text))]
         (re-pattern (str first-name "\\s+(" apostrophes-regex
-                         name-regex apostrophes-regex "\\s+){1,2}" last-name))))))
+                         name-regex apostrophes-regex "\\s+){1,3}" last-name))))))
 
 (defn remove-punctuation
   "Remove punctuation from s.

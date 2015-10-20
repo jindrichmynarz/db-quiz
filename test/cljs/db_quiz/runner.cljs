@@ -3,7 +3,8 @@
             [doo.runner :refer-macros [doo-tests]]
             [db-quiz.layout.svg-test]
             [db-quiz.logic-test]
-            [db-quiz.util-test]))
+            [db-quiz.util-test]
+            [db-quiz.normalize-test]))
 
 (enable-console-print!)
 
@@ -13,4 +14,5 @@
 
 (doo-tests 'db-quiz.layout.svg-test
            'db-quiz.logic-test
-           'db-quiz.util-test)
+           'db-quiz.util-test
+           'db-quiz.normalize-test)
