@@ -107,7 +107,7 @@
                                      ; TODO: Does first (some) suffice of we need the shortest path?
                                      path (some (partial find-connecting-path (into {} player-fields))
                                                 (remove-inner-fields player-fields))]
-                                 (when path 
+                                 (when path
                                    {:player player
                                     :path path})))
         players-fields (->> board
@@ -148,7 +148,7 @@
   (dissoc app-state :current-field))
 
 (defn match-answer
-  "Mark if the last question was correctly answered or not." 
+  "Mark if the last question was correctly answered or not."
   [matches? app-state]
   (assoc app-state :verdict matches?))
 
@@ -198,7 +198,7 @@
         (alts! [keypresses (timeout verdict-display-time)])
         (close! keypresses)
         (swap! app-state (comp restart-timer toggle-player clear-hint clear-answer
-                               deselect-current-field unmatch-answer))))) 
+                               deselect-current-field unmatch-answer)))))
 
 (defn make-a-guess
   []
@@ -214,10 +214,10 @@
       (when (= data-source :dbpedia)
         (analytics/log-answer (:subject correct-answer) answer-matched?)
         (update-success-rate answer-matched?))
-      
+
       (mark-deselected true)
       (go (<! (timeout 2000))
-          (mark-deselected false)) 
+          (mark-deselected false))
 
       ; Test if the game is over:
       (test-winner new-ownership current-field)
@@ -236,7 +236,7 @@
                                                 restart-timer
                                                 (fn [app-state] (assoc app-state :current-field id))))
                 :missed (do (test-winner on-turn id)
-                            (swap! app-state (comp toggle-player 
+                            (swap! app-state (comp toggle-player
                                                    deselect-current-field)))
                 nil))))
 
