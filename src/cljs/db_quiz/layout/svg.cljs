@@ -47,7 +47,7 @@
         [x y] center]
     (fn []
       (let [{:keys [board current-field loading?]} @app-state
-            {:keys [abbreviation ownership]} (board id)
+            {:keys [abbreviation deselected? ownership]} (board id)
             disabled? (not (nil? current-field))
             availability (if (or loading? disabled? (not (#{:default :missed} ownership)))
                              "unavailable"
@@ -56,11 +56,14 @@
                                    :missed "missed"))
             ownership-name (name ownership)
             {:keys [font-size-ratio label]} (if (= ownership :active)
-                                                 {:font-size-ratio (max (dec (count abbreviation)) 2.5)
+                                                 {:font-size-ratio (max (dec (count abbreviation)) 3)
                                                   :label abbreviation}
                                                  {:font-size-ratio 2
                                                   :label text})]
-        [:g {:class (join-by-space "hexagon" availability (when (= ownership :active) "active"))
+        [:g {:class (join-by-space "hexagon"
+                                   availability
+                                   (when (= ownership :active) "active")
+                                   (when deselected? "deselected"))
              :on-click (partial logic/pick-field id)}
          [:polygon.hex-outer {:fill (str "url(#" ownership-name "-outer)")
                               :points (hex-coords center size)}]
@@ -80,7 +83,7 @@
           r :hex-radius} :layout
          n :board-size} config
         size (* 2 r)
-        padding (/ r 2)
+        padding r
         y-space (* size (/ space 100))
         x-space (* y-space (/ (.sqrt js/Math 3) 2))
         w (* (.sqrt js/Math 3) r)
@@ -117,8 +120,9 @@
                                        (y-offset y)]
                               :id [x y]
                               :size size)])
-            (sort-by (comp :ownership second)
-                     (fn [a b] (if (= a :active) 1 -1))
+            (sort-by (comp #(select-keys % [:deselected? :ownership]) second)
+                     (fn [{:keys [deselected? ownership]} b]
+                       (if (or (= ownership :active) deselected?) 1 -1))
                      (:board @app-state)))])))
 
 (defn winners-cup

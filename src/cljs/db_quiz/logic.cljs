@@ -206,11 +206,19 @@
          :keys [answer board current-field on-turn verdict]} @app-state
         correct-answer (board current-field)
         answer-matched? (answer-matches? answer correct-answer)
-        new-ownership (if answer-matched? on-turn :missed)]
+        new-ownership (if answer-matched? on-turn :missed)
+        mark-deselected (fn [deselected?]
+                          (swap! app-state
+                                 #(assoc-in % [:board current-field :deselected?] deselected?)))]
     (when (nil? verdict)
       (when (= data-source :dbpedia)
         (analytics/log-answer (:subject correct-answer) answer-matched?)
         (update-success-rate answer-matched?))
+      
+      (mark-deselected true)
+      (go (<! (timeout 2000))
+          (mark-deselected false)) 
+
       ; Test if the game is over:
       (test-winner new-ownership current-field)
       (turn :answer answer
