@@ -223,35 +223,6 @@ a:hover {
   transform-origin: center center;
 }
 
-.hexagon.active {
-  animation: reveal-field ease-out 2s;
-}
-
-@keyframes reveal-field {
-  0% {
-    transform: scale(1, 1) rotate3d(0, 1, 0.3, 0deg);
-  }
-  50% {
-    transform: scale(1, 1) rotate3d(0, 1, 0.3, 360deg);
-  }
-  100% {
-    transform: scale(1.5, 1.5) rotate3d(0, 1, 0.3, 360deg);
-  }
-}
-
-.hexagon.deselected {
-  animation: hide-field ease-out 0.5s;
-}
-
-@keyframes hide-field {
-  0% {
-    transform: scale(1.5, 1.5); 
-  }
-  100% {
-    transform: scale(1, 1); 
-  }
-}
-
 #hex-triangle .hexagon.unavailable text {
   cursor: default; 
 }
@@ -551,4 +522,37 @@ td {
 
 #social-media a:not(:first-child) {
   margin-left: -26px;
+}
+
+/* Google Chrome specific styles */
+
+@media screen and (-webkit-min-device-pixel-ratio:0) { 
+  .hexagon.active {
+    animation: reveal-field ease-out 2s;
+  }
+
+  @keyframes reveal-field {
+    0% {
+      transform: scale(1, 1) rotate3d(0, 1, 0.3, 0deg);
+    }
+    50% {
+      transform: scale(1, 1) rotate3d(0, 1, 0.3, 360deg);
+    }
+    100% {
+      transform: scale(1.5, 1.5) rotate3d(0, 1, 0.3, 360deg);
+    }
+  }
+
+  .hexagon.deselected {
+    animation: hide-field ease-out 0.5s;
+  }
+
+  @keyframes hide-field {
+    0% {
+      transform: scale(1.5, 1.5); 
+    }
+    100% {
+      transform: scale(1, 1); 
+    }
+  }
 }
