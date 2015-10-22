@@ -574,8 +574,8 @@
 (defn facebook-button
   "Button to send a Facebook status about your game victories."
   [url]
-  (let [app-id (if (zero? (.indexOf url "http://localhost")) "873059332790811" "873050382791706")]
-     [:a.btn-hex {:href (str "https://www.facebook.com/dialog/feed/?"
+  (let [app-id (if (.startsWith url "http://localhost") "873059332790811" "873050382791706")]
+     [:a.btn-hex {:href (str "https://www.facebook.com/dialog/feed?"
                              (generate-query-string {:app_id app-id
                                                      :display "page"
                                                      :name "DB-quiz"
