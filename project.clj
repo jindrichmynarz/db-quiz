@@ -82,6 +82,7 @@
 
                    :cljsbuild {:builds {:app {:source-paths ["env/dev/cljs"]
                                               :compiler {:main "db-quiz.dev"
+                                                         :optimizations :none
                                                          :source-map true}}
                                         :test {:source-paths ["src/cljs"  "test/cljs"]
                                                :compiler {:output-to "target/test.js"
