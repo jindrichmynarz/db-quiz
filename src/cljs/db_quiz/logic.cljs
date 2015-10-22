@@ -129,7 +129,7 @@
           match-fn (fn [surface-form] (> (jaro-winkler normalized-guess
                                                        (normalize-answer surface-form))
                                          actual-threshold))]
-      (not (nil? (some match-fn (cons label surface-forms)))))
+      (not (nil? (some match-fn (cons label (filter string? surface-forms))))))
     false))
 
 (defn clear-answer
