@@ -11,44 +11,6 @@
             [clojure.string :refer [replace split]]
             [reagent-modals.modals :as reagent-modals]))
 
-; ----- Private functions -----
-
-(defn- round
-  "Round a `number` to a given `precision` decimal places." 
-  [precision number]
-  (let [rounding-factor (js/Math.pow 10 precision)]
-    (/ (js/Math.round (* number rounding-factor))
-       rounding-factor)))
-
-(def ^:private round-2
-  "Round to 2 decimal places"
-  (partial round 2))
-
-(def ^:private degrees->radians
-  "Convert angle in degrees to radians"
-  (partial * (/ js/Math.PI 180)))
-        
-(def ^:private get-difficulties
-  "Parse SPARQL query results for difficulties into vector of numbers of instances
-  for difficulties: [easy normal hard]"
-  (letfn [(parse-difficulty-intervals [{:keys [difficulty size]}]
-            [(keyword difficulty) (js/parseInt size 10)])]
-    (comp (juxt :easy :normal :hard)
-      (partial into {})
-      (partial map parse-difficulty-intervals))))
-
-(def ^:private get-indegree-limit
-  "Gets limiting indegrees from an exponential distribution. 
-  `max-count` is the number of instances in the distribution,
-  `angle` is the angle of the tangent of the distribution, where the limiting indegree is computed,  
-  `b-param` determines the shape of the exponential distribution.
-  The result is rounded to 2 decimal places."
-  (let [b-param (get-in config [:data :sparql :difficulty-distribution :params :b])] 
-    (fn [max-count angle]
-      (round-2 (/ (js/Math.log (- (/ (* max-count b-param)
-                                     (js/Math.tan (degrees->radians angle)))))
-                  b-param)))))
-
 ; ----- Public functions -----
 
 (def sparql-results-channel
@@ -157,48 +119,35 @@
   [board callback]
   (let [{{:keys [difficulty labels selectors]} :options
          :keys [language]} @app-state
-        {{{{:keys [min-size split-angles]} :difficulty-distribution
-           :keys [endpoint-urls query-files]} :sparql} :data
+        {{{:keys [endpoint-urls query-files]} :sparql} :data
          selectors-map :selectors} config
         endpoint (language endpoint-urls)
         queries (language query-files)
         query-file (labels queries)
-        selectors-data (map selectors-map selectors)
-        count-query-channel (sparql-query endpoint
-                                          (:max-instance-count queries)
-                                          :data {:selectors selectors-data})
-        difficulty-intervals-channel-fn (fn [& {:keys [minimum-indegree maximum-indegree]}]
-                                           (sparql-query endpoint
-                                                         (:difficulty-intervals queries)
-                                                         :data {:maximum-indegree maximum-indegree
-                                                                :minimum-indegree minimum-indegree
-                                                                :selectors selectors-data}))
-        query-channel-fn (fn [offset]
-                           (sparql-query endpoint
-                                         query-file
-                                         :data {:limit number-of-fields
-                                                :offset offset
-                                                :selectors selectors-data}))]
-    (go (if-let [max-count (:maxCount (first (<! count-query-channel)))]
-          (let [indegree-limit-fn (partial get-indegree-limit max-count)
-                maximum-indegree (indegree-limit-fn (:easy split-angles))
-                minimum-indegree (indegree-limit-fn (:normal split-angles))
-                difficulty-intervals-sizes (get-difficulties (<! (difficulty-intervals-channel-fn
-                                                                   :maximum-indegree maximum-indegree
-                                                                   :minimum-indegree minimum-indegree)))
-                normalized-intervals-sizes (conj (vec (reductions + 0 (map (partial max min-size)
-                                                                           (pop difficulty-intervals-sizes))))
-                                                 (last difficulty-intervals-sizes))
-                difficulty-intervals (partition 2 1 normalized-intervals-sizes)
-                [minimum maximum] (nth difficulty-intervals (case difficulty
-                                                              :easy 0
-                                                              :normal 1
-                                                              :hard 2))
-                offset (+ minimum (rand-int (- maximum minimum number-of-fields)))
-                results (map normalize/despoilerify (<! (query-channel-fn offset)))
-                results-count (count results)]
+        selectors-count (count selectors)
+        selectors-data (map-indexed (fn [index selector]
+                                      (assoc selector :union? (not= (inc index) selectors-count)))
+                                    (map selectors-map selectors))
+        query-channel (sparql-query endpoint
+                                    query-file
+                                    :data {:difficulty (case difficulty
+                                                             :easy 0
+                                                             :normal 1
+                                                             :hard 2)
+                                           :limit number-of-fields
+                                           :selectors selectors-data})]
+    (go (if-let [results (<! query-channel)]
+          (let [results-processed (->> results
+                                       (group-by (juxt :selectorPredicate :selectorObject))
+                                       vals
+                                       (map shuffle)
+                                       (apply map vector)
+                                       (apply concat)
+                                       (take number-of-fields)
+                                       (map normalize/despoilerify))
+                results-count (count results-processed)]
             (if (= results-count number-of-fields)
-              (do (swap! app-state #(assoc % :board (merge-board-with-data board results)))
+              (do (swap! app-state #(assoc % :board (merge-board-with-data board results-processed)))
                   (callback))
               (reagent-modals/modal! (modals/invalid-number-of-results number-of-fields results-count))))
           (reagent-modals/modal! (modals/error-loading-data endpoint))))))

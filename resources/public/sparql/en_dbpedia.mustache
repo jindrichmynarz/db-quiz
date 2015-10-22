@@ -1,10 +1,11 @@
 {{!
-@param Array<Array<URI, URI>> selectors
-@param int                    limit
-@parem int                    offset
+@param int                             difficulty
+@param Array<Array<IRI, IRI, boolean>> selectors
+@param int                             limit
 }}
 
 PREFIX dbo:     <http://dbpedia.org/ontology/>
+PREFIX dbq:     <http://mynarz.net/db-quiz/ontology/>
 PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX skos:    <http://www.w3.org/2004/02/skos/core#>
 
@@ -12,34 +13,29 @@ SELECT ?subject
        ?label
        ?description
        (GROUP_CONCAT(DISTINCT ?surfaceForm ; separator = "|") AS ?surfaceForms)
+       ?selectorPredicate
+       ?selectorObject
 WHERE {
+  {{#selectors}}
   {
-    SELECT ?subject
+    SELECT DISTINCT ?subject (<{{{p}}}> AS ?selectorPredicate) (<{{{o}}}> AS ?selectorObject)
     WHERE {
-      {
-        SELECT ?subject
-        WHERE {
-          GRAPH <http://dbpedia.org/db-quiz> {
-            VALUES ?class {
-              {{#selectors}}
-              <{{{o}}}>
-              {{/selectors}}
-            }
-            ?subject a ?class ;
-              dbo:wikiPageInDegree ?indegree .
-          }
-        }
-        GROUP BY ?subject ?indegree
-        ORDER BY DESC(?indegree)
+      GRAPH <http://dbpedia.org/db-quiz> {
+        ?subject dbq:difficulty [
+          dbq:forSelector [ <{{{p}}}> <{{{o}}}> ] ;
+          dbq:difficultyLevel ?difficulty 
+        ] .
+        FILTER (?difficulty >= {{difficulty}})
       }
     }
+    ORDER BY ?difficulty RAND() 
     LIMIT {{limit}}
-    OFFSET {{offset}}
-  }
+  } {{#union?}}UNION{{/union?}}
+  {{/selectors}}
   GRAPH <http://dbpedia.org/db-quiz> {
     ?subject rdfs:label ?label ;
       dbo:abstract ?description ;
       skos:altLabel ?surfaceForm .
   }
 }
-GROUP BY ?subject ?label ?description
+GROUP BY ?subject ?label ?description ?selectorPredicate ?selectorObject
