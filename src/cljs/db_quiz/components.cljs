@@ -188,7 +188,7 @@
                      (.set cookies "cookies" "true"))]
     (fn []
       (when-not (or cookies? @hidden?)
-        [:div#cookies-warning
+        [:footer#cookies-warning.navbar.navbar-fixed-bottom
          [:p (t :home.cookies/warning)
           [:button.btn.btn-default {:on-click hide}
            [:span.glyphicon.glyphicon-start.glyphicon-chevron-right]
