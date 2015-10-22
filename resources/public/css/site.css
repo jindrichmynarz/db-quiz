@@ -5,13 +5,12 @@ html {
 
 body {
   font-family: Voces, "Helvetica Neue", Helvetica, Arial, sans-serif;
-  margin: 0 auto;
   padding-top: 12px;
+  padding-bottom: 70px;
   -webkit-font-smoothing: antialiased;
   color: #333;
   line-height: 1.5em;
   text-align: center;
-  padding-bottom: 75px;
   perspective: 1200px;
 }
 
@@ -107,7 +106,6 @@ a:hover {
 #cookies-warning {
   z-index: 10;
   position: absolute;
-  bottom: 0;
   background: #eee;
   height: 65px;
   width: 100%;
@@ -218,6 +216,40 @@ a:hover {
 
 .hexagon.available .hex-inner, .hexagon.missed .hex-inner {
   cursor: pointer;
+}
+
+.hexagon {
+  transform-style: preserve-3d;
+  transform-origin: center center;
+}
+
+.hexagon.active {
+  animation: reveal-field ease-out 2s;
+}
+
+@keyframes reveal-field {
+  0% {
+    transform: scale(1, 1) rotate3d(0, 1, 0.3, 0deg);
+  }
+  50% {
+    transform: scale(1, 1) rotate3d(0, 1, 0.3, 360deg);
+  }
+  100% {
+    transform: scale(1.5, 1.5) rotate3d(0, 1, 0.3, 360deg);
+  }
+}
+
+.hexagon.deselected {
+  animation: hide-field ease-out 0.5s;
+}
+
+@keyframes hide-field {
+  0% {
+    transform: scale(1.5, 1.5); 
+  }
+  100% {
+    transform: scale(1, 1); 
+  }
 }
 
 #hex-triangle .hexagon.unavailable text {
