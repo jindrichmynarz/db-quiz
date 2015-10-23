@@ -20,8 +20,8 @@
                                 :places
                                 :films}
                    :share-url ""}
-         :players {:player-1 "Dmitrij"
-                   :player-2 "Paní M."}
+         :players {:player-1 "Player 1"
+                   :player-2 "Player 2"}
          :timer {:completion 0
                  :start 0}
          :verdict nil
