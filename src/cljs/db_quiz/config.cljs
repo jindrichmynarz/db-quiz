@@ -19,18 +19,8 @@
              :missed "#333333"
              :player-1 "#fc4349"
              :player-2 "#354d65"}
-   :data {:sparql {:difficulty-distribution {; Minimum size of a difficulty interval
-                                             :min-size 50
-                                             ; Parameters of the exponential distribution
-                                             :params {:b 0.12} 
-                                             ; Angles (in degrees) of the distribution's tangent delimiting
-                                             ; its first and second third.
-                                             :split-angles {:easy 179
-                                                            :normal 135}}
-                   :endpoint-urls {:cs "http://cs.dbpedia.org/sparql"
+   :data {:sparql {:endpoint-urls {:cs "http://cs.dbpedia.org/sparql"
                                    :en "http://lod2.vse.cz:8890/sparql"}
-                   ; Maximum number of results per query
-                   :page-size 5000
                    :query-files {:cs {:alphabetic "sparql/cs_dbpedia_az.mustache"
                                       :numeric "sparql/cs_dbpedia.mustache"}
                                  :en {:alphabetic ""
