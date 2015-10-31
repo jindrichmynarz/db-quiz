@@ -32,12 +32,8 @@
                    ; Maximum number of results per query
                    :page-size 5000
                    :query-files {:cs {:alphabetic "sparql/cs_dbpedia_az.mustache"
-                                      :difficulty-intervals "sparql/cs_dbpedia_count_intervals.mustache"
-                                      :max-instance-count "sparql/cs_max_instances_per_indegree.mustache"
                                       :numeric "sparql/cs_dbpedia.mustache"}
                                  :en {:alphabetic ""
-                                      :difficulty-intervals "sparql/en_dbpedia_count_intervals.mustache"
-                                      :max-instance-count "sparql/en_max_instances_per_indegree.mustache"
                                       :numeric "sparql/en_dbpedia.mustache"}}}}
    ; Similarity threshold required for the guess to match the correct answer
    :guess-similarity-threshold 0.94
