@@ -15,7 +15,7 @@ SELECT ?subject
        (GROUP_CONCAT(DISTINCT ?surfaceForm ; separator = "|") AS ?surfaceForms)
 WHERE {
   {
-    SELECT (SAMPLE(?_subject) AS ?subject)
+    SELECT ?firstLetter (SAMPLE(?_subject) AS ?subject)
     WHERE {
       {{#selectors}}
       {
@@ -44,6 +44,7 @@ WHERE {
     ?subject rdfs:label ?label ;
       dbo:abstract ?description ;
       skos:altLabel ?surfaceForm .
+    FILTER STRSTARTS(UCASE(?label), UCASE(?firstLetter))
   }
 }
 GROUP BY ?subject ?label ?description
