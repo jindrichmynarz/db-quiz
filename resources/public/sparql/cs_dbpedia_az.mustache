@@ -1,76 +1,49 @@
 {{!
-@param Array<Array<URI, URI>> selectors
-@param int                    offset
+@param int                             difficulty
+@param Array<Array<IRI, IRI, boolean>> selectors
+@param int                             limit
 }}
 
-PREFIX csdb:    <http://cs.dbpedia.org/property/>
 PREFIX dbo:     <http://dbpedia.org/ontology/>
-PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX dbq:     <http://mynarz.net/db-quiz/ontology/>
 PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos:    <http://www.w3.org/2004/02/skos/core#>
 
 SELECT ?subject
        ?label
        ?description
-       (?label AS ?surfaceForms)
+       (GROUP_CONCAT(DISTINCT ?surfaceForm ; separator = "|") AS ?surfaceForms)
 WHERE {
   {
-    SELECT (SAMPLE(?_s) AS ?subject)
-           (SAMPLE(?_label) AS ?label)
-           (SAMPLE(?_description) AS ?description)
+    SELECT (SAMPLE(?_subject) AS ?subject)
     WHERE {
+      {{#selectors}}
       {
-        SELECT ?_s
-               (STR(SAMPLE(?__label)) AS ?_label)
-               (STR(SAMPLE(?__description)) AS ?_description)
+        SELECT ?_subject ?firstLetter 
         WHERE {
-          {
-            SELECT ?_s ?inDegree
-            WHERE {
-              {
-                SELECT ?_s (COUNT(?link) AS ?inDegree)
-                WHERE {
-                  GRAPH <http://cs.dbpedia.org> {
-                    VALUES (?p ?o) {
-                      {{#selectors}}
-                      (<{{{p}}}> <{{{o}}}>)
-                      {{/selectors}}
-                    }
-                    ?_s ?p ?o .
-                    ?link dbo:wikiPageWikiLink ?_s .
-                  }
-                }
-                GROUP BY ?_s
-                ORDER BY DESC(?inDegree)
-              }
-            }
-            OFFSET {{offset}}
-            LIMIT 5000
-          }
-          GRAPH <http://cs.dbpedia.org> {
-            ?_s rdfs:label ?__label ;
-              dbo:abstract ?__description .
-            FILTER (!REGEX(?__label, "^(\\p{Lu}\\.?)+$") {{! Filter out abbreviations, such as "R.E.M.". }}
-                    &&
-                    !REGEX(?__label, "^.*\\d+.*$") {{! Eliminate digits }}
-                    &&
-                    (STRLEN(?__description) > 140) {{! Get only resources with longer descriptions. }} 
-                    &&
-                    langMatches(lang(?__label), "cs")
-                    &&
-                    langMatches(lang(?__description), "cs")
-                    &&
-                    (STRLEN(?__label) < 40)) {{! Eliminate too long labels. }} 
+          GRAPH <http://cs.dbpedia.org/db-quiz> {
+            ?_subject dbq:difficulty [
+                dbq:forSelector [ <{{{p}}}> <{{{o}}}> ] ;
+                dbq:difficultyLevel {{difficulty}} 
+              ] ;
+              rdfs:label ?label .
+            BIND (SUBSTR(?label, 1, 1) AS ?_firstLetter)
+            {{! Filter to labels starting with a letter or "Ch". }}
+            FILTER (REGEX(?_firstLetter, "^[ABCČDEFGHIJKLMNOPRŘSŠTUVWZŽ].*$", "i")
+                    ||
+                    STRSTARTS(?label, "Ch"))
+            BIND (IF(STRSTARTS(?label, "Ch"), "Ch", UCASE(?_firstLetter)) AS ?firstLetter)
           }
         }
-        GROUP BY ?_s
-      }
-      BIND (SUBSTR(?_label, 1, 1) AS ?_firstLetter)
-      # Filter to labels starting with a letter or "Ch".
-      FILTER (REGEX(?_firstLetter, "^[ABCČDEFGHIJKLMNOPRŘSŠTUVWZŽ].*$", "i")
-              ||
-              STRSTARTS(?_label, "Ch"))
-      BIND (IF(STRSTARTS(?_label, "Ch"), "Ch", UCASE(?_firstLetter)) AS ?firstLetter) 
+      } {{#union?}}UNION{{/union?}}
+      {{/selectors}}
     }
     GROUP BY ?firstLetter
   }
+  GRAPH <http://cs.dbpedia.org/db-quiz> {
+    ?subject rdfs:label ?label ;
+      dbo:abstract ?description ;
+      skos:altLabel ?surfaceForm .
+  }
 }
+GROUP BY ?subject ?label ?description
