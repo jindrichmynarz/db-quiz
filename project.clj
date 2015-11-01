@@ -7,8 +7,8 @@
   :source-paths ["src/clj" "src/cljs"]
 
   :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-                 [org.clojure/clojurescript "1.7.122" :scope "provided"]
+                 [org.clojure/core.async "0.2.371"]
+                 [org.clojure/clojurescript "1.7.145" :scope "provided"]
                  [ring-server "0.4.0"]
                  [cljsjs/mustache "1.1.0-0"]
                  [reagent "0.5.1"]
@@ -59,8 +59,8 @@
                    :dependencies [[ring-mock "0.1.5"]
                                   [ring/ring-devel "1.4.0"]
                                   [leiningen-core "2.5.3"]
-                                  [lein-figwheel "0.4.0"]
-                                  [org.clojure/tools.nrepl "0.2.11"]
+                                  [lein-figwheel "0.4.1"]
+                                  [org.clojure/tools.nrepl "0.2.12"]
                                   [pjstadig/humane-test-output "0.7.0"]
                                   [org.clojure/test.check "0.8.2"]]
 
