@@ -45,7 +45,7 @@
   [{:keys [center id size text]}]
   (let [absolute-offset (* (/ size 100) (get-in config [:layout :inner-hex-offset]))
         [x y] center]
-    (fn []
+    (fn [{:keys [center id size text]}]
       (let [{:keys [board current-field loading?]} @app-state
             {:keys [abbreviation deselected? ownership]} (board id)
             disabled? (not (nil? current-field))
