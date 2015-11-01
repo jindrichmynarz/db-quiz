@@ -30,6 +30,10 @@
 (defroute "/play" []
   (session/put! :current-page components/play-page))
 
+; Handle Facebook's appending junk to URL.
+(defroute "/_=_" []
+  (session/put! :current-page components/home-page))
+
 (defroute "*" []
   (session/put! :current-page components/not-found))
 
