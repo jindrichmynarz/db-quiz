@@ -32,4 +32,8 @@
          
          "Peter Capaldi"
          "Peter Dougan Capaldi" 
-         "Peter Dougan Capaldi is a Scottish actor and film director.")))
+         "Peter Dougan Capaldi is a Scottish actor and film director."
+         
+         "Jan Kotěra"
+         "Jan Karel Zdenko Kotěra"
+         "Jan Karel Zdenko Kotěra byl český architekt, urbanista, teoretik architektury, návrhář nábytku a malíř.")))
