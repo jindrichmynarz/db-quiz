@@ -338,8 +338,10 @@
 
 (defn dbpedia-options
   []
-  [:div [selector-picker]
-        [difficulty-picker]])
+  (let [czech? (= (:language @app-state) :cs)]
+    [:div [selector-picker]
+     [difficulty-picker]
+     (when czech? [field-labelling])]))
 
 (def advanced-options
   (let [id [:options :data-source]
