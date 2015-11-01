@@ -8,7 +8,7 @@
             [db-quiz.normalize :as normalize]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<! >! chan]]
-            [clojure.string :refer [replace split]]
+            [clojure.string :refer [lower-case replace split]]
             [reagent-modals.modals :as reagent-modals]))
 
 ; ----- Public functions -----
@@ -96,7 +96,7 @@
   [board data]
   (letfn [(field-by-initial [initial]
             (first (filter (fn [[k {:keys [text] :as v}]]
-                             (= text initial))
+                             (= (lower-case text) (lower-case initial)))
                            board)))]
     (into {}
       (map (fn [{:keys [abbreviation] :as result}]
