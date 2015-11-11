@@ -67,7 +67,7 @@
                      "en" :en
                      "cs" :cs
                      :cs))]
-    (swap! app-state #(assoc % :language language))))
+    (swap! app-state assoc :language language))))
 
 (defn set-defaults!
   "Set default options on load."
@@ -135,7 +135,7 @@
   Label can be either a string or a keyword that will be looked up in the translation map."
   [id label-key options]
   (let [id-str (string/join "." (map name id))
-        click (fn [e] (swap! app-state #(assoc-in % id (keyword (.. e -target -dataset -key)))))
+        click (fn [e] (swap! app-state assoc-in id (keyword (.. e -target -dataset -key))))
         button (fn [current-id [id label]]
                  [:button {:class (btn-class-fn (= id current-id))
                            :data-key id
@@ -207,7 +207,7 @@
   [id label-key]
   (let [local-id (string/join "." ["players" (name id)])
         classes (join-by-space "form-group" "player-field" (name id))
-        change (fn [e] (swap! app-state #(assoc-in % [:players id] (.. e -target -value))))]
+        change (fn [e] (swap! app-state assoc-in [:players id] (.. e -target -value)))]
     (fn []
       (let [player-name (get-in @app-state [:players id])]
         [:div {:class classes}
@@ -346,7 +346,7 @@
 (def advanced-options
   (let [id [:options :data-source]
         toggle-data-source (partial toggle [:dbpedia :gdrive])
-        click-handler {:on-click (fn [_] (swap! app-state #(update-in % id toggle-data-source)))}
+        click-handler {:on-click (fn [_] (swap! app-state update-in id toggle-data-source))}
         activate (fn [active?] (if active? "active" ""))
         tab-pane-class (partial join-by-space "tab-pane")]
     (fn []
@@ -451,7 +451,7 @@
   (let [{:keys [hint]} @app-state]
     [:input.form-control {:autoFocus "autoFocus"
                           :id :answer
-                          :on-change (fn [e] (swap! app-state #(assoc % :answer (.-value (.-target e)))))
+                          :on-change (fn [e] (swap! app-state assoc :answer (.-value (.-target e))))
                           :on-key-down (fn [e]
                                          ; Submit a guess by pressing Enter
                                          (when (= (.-keyCode e) 13)

@@ -20,13 +20,13 @@
   []
   (let [despoilerify? (< (rand) 0.8)]
     (when-not despoilerify? (js/console.log "[WARNING] Questions are not despoilerified."))
-    (swap! app-state #(assoc-in % [:options :despoilerify?] despoilerify?))))
+    (swap! app-state assoc-in [:options :despoilerify?] despoilerify?)))
 
 (defn update-success-rate
   "Update the counts of correctly and incorrectly answered questions."
   [correct-answer?]
   (let [answer-type (if correct-answer? :correct :incorrect)]
-    (swap! app-state #(update-in % [:answers answer-type] inc))))
+    (swap! app-state update-in [:answers answer-type] inc)))
 
 (defn init-board
   "Initialize a data structure representing the game board."
@@ -160,12 +160,13 @@
 (defn annull-game!
   "Annull abandoned game."
   []
-  (swap! app-state (comp #(assoc %
-                                 :answer nil
-                                 :current-field nil
-                                 :timer {:completion 0
-                                         :start 0}
-                                 :verdict nil))))
+  (swap! app-state
+         assoc 
+         :answer nil
+         :current-field nil
+         :timer {:completion 0
+                 :start 0}
+         :verdict nil))
 
 (def unmatch-answer
   "Clear the answer match status."
@@ -209,7 +210,9 @@
         new-ownership (if answer-matched? on-turn :missed)
         mark-deselected (fn [deselected?]
                           (swap! app-state
-                                 #(assoc-in % [:board current-field :deselected?] deselected?)))]
+                                 assoc-in
+                                 [:board current-field :deselected?]
+                                 deselected?))]
     (when (nil? verdict)
       (when (= data-source :dbpedia)
         (analytics/log-answer (:subject correct-answer) answer-matched?)
@@ -236,8 +239,7 @@
                                                 restart-timer
                                                 (fn [app-state] (assoc app-state :current-field id))))
                 :missed (do (test-winner on-turn id)
-                            (swap! app-state (comp toggle-player
-                                                   deselect-current-field)))
+                            (swap! app-state (comp toggle-player deselect-current-field)))
                 nil))))
 
 (defonce timeout-updater
@@ -248,11 +250,12 @@
                           correct-answer (get-in board [current-field :label])]
                       (when (and current-field (nil? verdict))
                         (if (< completion 100)
-                          (do (swap! app-state #(assoc-in %
-                                                          [:timer :completion]
-                                                          (/ (- (.getTime (js/Date.)) start)
-                                                             (* 10 time-to-guess))))
+                          (do (swap! app-state
+                                     assoc-in
+                                     [:timer :completion]
+                                     (/ (- (.getTime (js/Date.)) start)
+                                        (* 10 time-to-guess)))
                               (when (and (nil? hint) (> completion 50) (or (nil? answer) (= answer "")))
-                                (swap! app-state #(assoc % :hint (generate-hint correct-answer)))))
+                                (swap! app-state assoc :hint (generate-hint correct-answer)))))
                           (make-a-guess)))))
                   1000))

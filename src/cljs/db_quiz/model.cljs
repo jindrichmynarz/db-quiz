@@ -32,9 +32,9 @@
 (defn wrap-load
   [input-channel output-channel]
   (go
-    (swap! app-state #(assoc % :loading? true))
+    (swap! app-state assoc :loading? true)
     (>! output-channel (<! input-channel))
-    (swap! app-state #(assoc % :loading? false)))
+    (swap! app-state assoc :loading? false))
   output-channel)
 
 (defn sparql-query
@@ -43,13 +43,13 @@
   (let [query-channel (http/get query-path {:channel (chan 1 (map :body))})
         sparql-results (sparql-results-channel)]
     (go
-      (swap! app-state #(assoc % :loading? true))
+      (swap! app-state assoc :loading? true)
       (let [query (render-template (<! query-channel) :data data)
             results (<! (sparql-query-channel sparql-endpoint query))]
         (if results
           (>! sparql-results results)
           (reagent-modals/modal! (modals/error-loading-data sparql-endpoint))))
-      (swap! app-state #(assoc % :loading? false)))
+      (swap! app-state assoc :loading? false))
     sparql-results))
 
 (defn spreadsheet-url-to-id
@@ -147,7 +147,7 @@
                                        (map normalize/despoilerify))
                 results-count (count results-processed)]
             (if (= results-count number-of-fields)
-              (do (swap! app-state #(assoc % :board (merge-board-with-data board results-processed)))
+              (do (swap! app-state assoc :board (merge-board-with-data board results-processed))
                   (callback))
               (reagent-modals/modal! (modals/invalid-number-of-results number-of-fields results-count))))
           (reagent-modals/modal! (modals/error-loading-data endpoint))))))
@@ -158,6 +158,6 @@
         spreadsheet-id (spreadsheet-url-to-id spreadsheet-url)]
     (if spreadsheet-id
       (go (let [results (<! (load-gdocs-items spreadsheet-id))]
-            (swap! app-state #(assoc % :board (merge-board-with-data board results)))
+            (swap! app-state assoc :board (merge-board-with-data board results))
             (callback)))
       (reagent-modals/modal! (modals/invalid-google-spreadsheet-url spreadsheet-url)))))
