@@ -67,7 +67,7 @@
                      "en" :en
                      "cs" :cs
                      :cs))]
-    (swap! app-state assoc :language language))))
+    (swap! app-state assoc :language language)))
 
 (defn set-defaults!
   "Set default options on load."
