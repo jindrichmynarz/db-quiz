@@ -41,7 +41,8 @@
   [text]
   (-> text
       (replace #"\s*\([^)]+\)" "")
-      (replace #"\s*\[[^\]]+\]" "")))
+      (replace #"\s*\[[^\]]+\]" "")
+      (replace #"\s*/[^/]+/" "")))
 
 (def name-like?
   "Detect if `text` looks like a name.
