@@ -1,4 +1,4 @@
-(defproject db-quiz "0.8.0-SNAPSHOT"
+(defproject db-quiz "0.8.1-SNAPSHOT"
   :description "A database-backed take on the game of AZ-kvíz"
   :url "http://github.com/jindrichmynarz/db-quiz"
   :license {:name "Eclipse Public License"
@@ -69,7 +69,7 @@
                    :source-paths ["env/dev/clj"]
                    :plugins [[lein-doo "0.1.5-SNAPSHOT"]
                              [lein-figwheel "0.5.0-2"]
-                             [lein-cljsbuild "1.1.0"]]
+                             [lein-cljsbuild "1.1.1"]]
 
                    :injections [(require 'pjstadig.humane-test-output)
                                 (pjstadig.humane-test-output/activate!)]
