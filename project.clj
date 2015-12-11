@@ -98,6 +98,6 @@
                                    :builds {:app
                                              {:source-paths ["env/prod/cljs"]
                                               :compiler
-                                              {:externs ["externs/bootstrap.js"]
+                                              {:externs ^:replace ["externs/bootstrap.js"]
                                                :optimizations :advanced
                                                :pretty-print false}}}}}})
