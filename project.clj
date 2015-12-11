@@ -7,8 +7,8 @@
   :source-paths ["src/clj" "src/cljs"]
 
   :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/core.async "0.2.371"]
-                 [org.clojure/clojurescript "1.7.145" :scope "provided"]
+                 [org.clojure/core.async "0.2.374"]
+                 [org.clojure/clojurescript "1.7.189" :scope "provided"]
                  [ring-server "0.4.0"]
                  [cljsjs/mustache "1.1.0-0"]
                  [reagent "0.5.1"]
@@ -20,7 +20,7 @@
                  [hiccup "1.0.5"]
                  [environ "1.0.1"]
                  [clj-tagsoup/clj-tagsoup "0.3.0" :exclusions [org.clojure/clojure]]
-                 [cljs-http "0.1.37"]
+                 [cljs-http "0.1.38"]
                  [secretary "1.2.3"]
                  [clj-fuzzy "0.3.1"]
                  [org.clojars.frozenlock/reagent-modals "0.2.3"]
@@ -37,7 +37,7 @@
   :uberjar-name "db-quiz.jar"
 
   :main db-quiz.server
-
+  
   :clean-targets ^{:protect false} [:target-path
                                     [:cljsbuild :builds :app :compiler :output-dir]
                                     [:cljsbuild :builds :app :compiler :output-to]]
@@ -59,14 +59,16 @@
                    :dependencies [[ring-mock "0.1.5"]
                                   [ring/ring-devel "1.4.0"]
                                   [leiningen-core "2.5.3"]
-                                  [lein-figwheel "0.4.1"]
+                                  [lein-figwheel "0.5.0-2"]
                                   [org.clojure/tools.nrepl "0.2.12"]
-                                  [pjstadig/humane-test-output "0.7.0"]
-                                  [org.clojure/test.check "0.8.2"]]
+                                  [pjstadig/humane-test-output "0.7.1"]
+                                  [org.clojure/test.check "0.9.0"]
+                                  [com.cemerick/piggieback "0.2.1"
+                                   :exclude [org.clojure/clojurescript]]]
 
                    :source-paths ["env/dev/clj"]
                    :plugins [[lein-doo "0.1.5-SNAPSHOT"]
-                             [lein-figwheel "0.4.0"]
+                             [lein-figwheel "0.5.0-2"]
                              [lein-cljsbuild "1.1.0"]]
 
                    :injections [(require 'pjstadig.humane-test-output)
