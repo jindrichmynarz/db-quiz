@@ -18,6 +18,8 @@
 
 (defonce cookies (goog.net.Cookies. js/document))
 
+(defonce month (* 30 24 60 60))
+
 (defn check-if-online
   "If browser is offline, show a warning modal.
   Warning: This is unreliable, since browsers implement it inconsistently."
@@ -108,7 +110,7 @@
         (.tooltip element "show")
         (js/setTimeout (fn []
                          (.tooltip element "destroy")
-                         (.set cookies cookie-id "true"))
+                         (.set cookies cookie-id "true" month))
                        10000)))))
 
 ; ----- Common components -----
@@ -185,7 +187,7 @@
   (let [cookies? (.get cookies "cookies")
         hidden? (atom false)
         hide (fn [_] (reset! hidden? true)
-                     (.set cookies "cookies" "true"))]
+                     (.set cookies "cookies" "true" month))]
     (fn []
       (when-not (or cookies? @hidden?)
         [:footer#cookies-warning.navbar.navbar-fixed-bottom
@@ -282,7 +284,7 @@
         click-fn (fn [language]
                      (swap! app-state (comp #(assoc-in % [:options :selectors] #{})
                                             #(assoc % :language language)))
-                     (.set cookies "language" (name language)))]
+                     (.set cookies "language" (name language) month))]
     (fn []
       (let [language (:language @app-state)]
         [:div.form-group
