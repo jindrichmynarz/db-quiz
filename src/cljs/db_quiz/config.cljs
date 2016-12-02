@@ -19,8 +19,8 @@
              :missed "#333333"
              :player-1 "#fc4349"
              :player-2 "#354d65"}
-   :data {:sparql {:endpoint-urls {:cs "http://xtest.lmcloud.vse.cz/virtuoso-dbquiz/sparql"
-                                   :en "http://xtest.lmcloud.vse.cz/virtuoso-dbquiz/sparql"}
+   :data {:sparql {:endpoint-urls {:cs "http://doc.lmcloud.vse.cz/virtuoso-dbquiz/sparql"
+                                   :en "http://doc.lmcloud.vse.cz/virtuoso-dbquiz/sparql"}
                    :query-files {:cs {:alphabetic "sparql/cs_dbpedia_az.mustache"
                                       :numeric "sparql/cs_dbpedia.mustache"}
                                  :en {:alphabetic ""
