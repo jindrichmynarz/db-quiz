@@ -1,0 +1,91 @@
+/* Google Chrome specific styles */
+
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  .hexagon.active {
+    animation: reveal-field ease-out 2s;
+  }
+
+  @keyframes reveal-field {
+    0% {
+      transform: scale(1, 1) rotate3d(0, 1, 0.3, 0deg);
+    }
+    50% {
+      transform: scale(1, 1) rotate3d(0, 1, 0.3, 360deg);
+    }
+    100% {
+      transform: scale(1.5, 1.5) rotate3d(0, 1, 0.3, 360deg);
+    }
+  }
+
+  .hexagon.deselected {
+    animation: hide-field ease-out 0.5s;
+  }
+
+  @keyframes hide-field {
+    0% {
+      transform: scale(1.5, 1.5);
+    }
+    100% {
+      transform: scale(1, 1);
+    }
+  }
+}
+
+/* Mobile specific styles */
+
+@media screen and (max-width: 767px) {
+  body {
+    padding-bottom: 0;
+  }
+
+  #app {
+    height: 100%;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  #advanced [role="group"] {
+    width: 100%;
+  }
+
+  #advanced .btn-group-vertical[role="group"] button {
+    padding: 10px;
+  }
+
+  #cookies-warning {
+    position: relative;
+    height: auto;
+  }
+
+  #cookies-warning button {
+    display: block;
+    margin: 20px auto 0 auto;
+  }
+
+  .game-canvas {
+    margin-top: 0;
+  }
+
+  .question-container {
+    position: relative;
+    margin: 0 15px;
+    padding: 0 15px 30px 15px;
+  }
+
+  #report-spoiler {
+    position: absolute;
+    top: 20px;
+    right: 0;
+    transform: none;
+  }
+}
+
+/* Tablet specific styles */
+
+@media only screen and (min-width: 768px) and (max-width: 1024px) {
+  #advanced .btn-group-vertical[role="group"] button {
+    padding: 10px;
+  }
+}

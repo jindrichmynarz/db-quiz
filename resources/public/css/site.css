@@ -56,11 +56,25 @@ a:hover {
 }
 
 #start-menu {
-  margin-top: 1em;
+  padding-bottom: 40px;
+  margin-top: 20px;
 }
 
 #advanced {
+  margin: 30px 0;
   text-align: left;
+}
+
+#advanced h4 {
+  margin-bottom: 20px;
+}
+
+#advanced .form-group {
+  margin-bottom: 30px;
+}
+
+#advanced .form-group:last-of-type {
+  margin-bottom: 0;
 }
 
 #advanced h4 a, .nav.nav-tabs a, .form-group a {
@@ -70,8 +84,12 @@ a:hover {
 
 #advanced .tab-content {
   padding: 1em 0 .5em 0;
-  border-bottom: 1px solid #ddd; 
+  border-bottom: 1px solid #ddd;
   margin-bottom: 1em;
+}
+
+#advanced .gdrive-tab .form-group {
+  padding: 0 15px;
 }
 
 .player-field.player-1 {
@@ -115,6 +133,15 @@ a:hover {
   margin-left: 1em;
 }
 
+.game-canvas {
+  padding: 0;
+  margin-top: 100px;
+}
+
+.game-canvas > .row {
+  margin: 0;
+}
+
 #loading {
   position: fixed;
   top: 1em;
@@ -131,7 +158,7 @@ a:hover {
 #loadhex {
   float: left;
   position: relative;
-  width: 30px; 
+  width: 30px;
   height: 17.32px;
   background-color: #000;
   margin: 8.66px 0;
@@ -223,7 +250,7 @@ a:hover {
 }
 
 #hex-triangle .hexagon.unavailable text {
-  cursor: default; 
+  cursor: default;
 }
 
 #hex-triangle text {
@@ -340,7 +367,7 @@ td {
 }
 
 #timeout.player-1 {
-  background-color: #fc4349; 
+  background-color: #fc4349;
   background-image: -webkit-linear-gradient(left, #fc4349, #354d65);
   background-image:         linear-gradient(to right, #fc4349, #354d65);
 }
@@ -353,6 +380,11 @@ td {
 
 #question-box {
   text-align: left;
+  padding: 0;
+}
+
+.question-container {
+  margin: 0 -15px;
 }
 
 #report-spoiler {
@@ -361,7 +393,12 @@ td {
   transform: translateY(50%);
 }
 
-#report-spoiler.inactive button { 
+#report-spoiler button {
+  width: 100%;
+}
+
+
+#report-spoiler.inactive button {
   cursor: default;
 }
 
@@ -371,6 +408,10 @@ td {
 
 #description {
   text-align: justify;
+}
+
+#verdict {
+  margin-top: 20px;
 }
 
 #verdict div.alert {
@@ -415,11 +456,15 @@ td {
 }
 
 #winner .player-1 {
-  color: #fc4349; 
+  color: #fc4349;
 }
 
 #winner .player-2 {
   color: #354d65;
+}
+
+#winner + .button {
+  margin: 30px 0;
 }
 
 .modal-content {
@@ -434,7 +479,7 @@ td {
 #info-menu {
   z-index: 10;
   position: fixed;
-  top: 1em; 
+  top: 1em;
   left: 2%;
 }
 
@@ -465,7 +510,7 @@ td {
 
 .btn-hex {
   position: relative;
-  width: 50px; 
+  width: 50px;
   height: 28.87px;
   background-color: #eee;
   margin: 14.43px 2px;
@@ -517,37 +562,4 @@ td {
 
 #social-media a:not(:first-child) {
   margin-left: -26px;
-}
-
-/* Google Chrome specific styles */
-
-@media screen and (-webkit-min-device-pixel-ratio:0) { 
-  .hexagon.active {
-    animation: reveal-field ease-out 2s;
-  }
-
-  @keyframes reveal-field {
-    0% {
-      transform: scale(1, 1) rotate3d(0, 1, 0.3, 0deg);
-    }
-    50% {
-      transform: scale(1, 1) rotate3d(0, 1, 0.3, 360deg);
-    }
-    100% {
-      transform: scale(1.5, 1.5) rotate3d(0, 1, 0.3, 360deg);
-    }
-  }
-
-  .hexagon.deselected {
-    animation: hide-field ease-out 0.5s;
-  }
-
-  @keyframes hide-field {
-    0% {
-      transform: scale(1.5, 1.5); 
-    }
-    100% {
-      transform: scale(1, 1); 
-    }
-  }
 }
