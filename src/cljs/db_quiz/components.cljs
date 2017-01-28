@@ -288,7 +288,7 @@
     (fn []
       (let [language (:language @app-state)]
         [:div.form-group
-         [:div.btn-group.col-sm-4.col-sm-offset-9 {:role "group"}
+         [:div.btn-group.col-sm-4.col-sm-offset-4 {:role "group"}
           (doall (for [[id label] options
                        :let [active? (= id language)]]
                    [:button {:class (btn-class-fn active?)
@@ -366,7 +366,7 @@
          [:div.tab-content
           [:div {:class (tab-pane-class dbpedia-class)}
             [dbpedia-options]]
-          [:div {:class (tab-pane-class gdrive-class)}
+          [:div.gdrive-tab {:class (tab-pane-class gdrive-class)}
             [google-spreadsheet-options]]]]))))
 
 (defn basic-options
@@ -381,7 +381,7 @@
     (set-defaults!)
     (fn []
       (annull-game!)
-      [:div.col-sm-6.col-sm-offset-3
+      [:div.col-sm-8.col-sm-offset-2
        [:div#start-menu.form-horizontal.row
         [basic-options]
         [:div#advanced
@@ -431,7 +431,7 @@
        :display-name "report-spoiler"
        :reagent-render (fn []
                          [:div#report-spoiler {:data-placement "left"
-                                               :class (join-by-space "col-sm-4"
+                                               :class (join-by-space "col-sm-5"
                                                                      (when @reported? "inactive"))
                                                :title (t :tooltips/report-spoiler)}
                           [:button.btn.btn-default
@@ -521,11 +521,11 @@
   (let [{{:keys [data-source]} :options
          :keys [board verdict]} @app-state
         {:keys [abbreviation description label]} (board id)]
-    [:div
+    [:div.question-container
       [:div.row
         [:div.col-sm-12
           [:div.row
-           [:div.col-sm-8 [:h2 abbreviation]]
+           [:div.col-sm-7 [:h2 abbreviation]]
            (when (= data-source :dbpedia) [report-spoiler])]
           [:p#description description]]]
       [:div.row
@@ -563,11 +563,11 @@
       (if (empty? board)
         (do (redirect "#") ; If no data is loaded, redirect to home page.
             [:div]) ; Return empty div as a valid Reagent component.
-        [:div.container-fluid
+        [:div.container-fluid.game-canvas
          [menu]
          [:div.row
-          [:div.col-sm-5.col-sm-offset-1 [svg/hex-triangle]]
-          [:div#question-box.col-sm-5
+          [:div.col-sm-8.col-sm-offset-2.col-md-5.col-md-offset-0 [svg/hex-triangle]]
+          [:div#question-box.col-sm-8.col-sm-offset-2.col-md-5.col-md-offset-1
            [player-on-turn]
            (when current-field
              [question-box current-field])]]
