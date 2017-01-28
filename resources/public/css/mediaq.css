@@ -68,6 +68,15 @@
     margin-top: 0;
   }
 
+  .active-question .game-canvas #hex-triangle {
+    display: none;
+  }
+
+  .active-question .game-canvas #question-box {
+    padding-top: 60px;
+    overflow-x: hidden;
+  }
+
   .question-container {
     position: relative;
     margin: 0 15px;
