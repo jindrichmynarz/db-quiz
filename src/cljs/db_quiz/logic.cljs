@@ -37,9 +37,9 @@
                                                     (when (= x y) :b)
                                                     (when (= y size) :c)))))
         get-neighbours (fn [x y] (set (filter (fn [[x y]] (and ; Conditions for neighbours
-                                                               (<= x y)
-                                                               (<= 1 x size)
-                                                               (<= 1 y size)))
+                                                           (<= x y)
+                                                           (<= 1 x size)
+                                                           (<= 1 y size)))
                                               (map (fn [[ox oy]] [(+ x ox) (+ y oy)])
                                                    ; Possible offset of neighbours
                                                    [[-1 -1] [0 -1] [1 0] [0 1] [1 1] [-1 0]]))))
@@ -74,19 +74,19 @@
          (set? sides)]}
   (let [player-fields-set (set (keys player-fields))]
     (loop [path #{coords}
-            visited-sides sides
-            visited-fields #{coords}
-            fields-to-visit (vec (intersection neighbours player-fields-set))]
+           visited-sides sides
+           visited-fields #{coords}
+           fields-to-visit (vec (intersection neighbours player-fields-set))]
       (cond (= visited-sides #{:a :b :c}) path
-            (not (seq fields-to-visit)) false
-            :else (let [next-field (peek fields-to-visit)
-                        {:keys [neighbours sides]} (player-fields next-field)]
-                    (recur (conj path next-field)
-                            (union visited-sides sides)
-                            (conj visited-fields next-field)
-                            (into (pop fields-to-visit)
-                                  (remove visited-fields
-                                          (intersection neighbours player-fields-set)))))))))
+        (not (seq fields-to-visit)) false
+        :else (let [next-field (peek fields-to-visit)
+                    {:keys [neighbours sides]} (player-fields next-field)]
+                (recur (conj path next-field)
+                  (union visited-sides sides)
+                  (conj visited-fields next-field)
+                  (into (pop fields-to-visit)
+                        (remove visited-fields
+                                (intersection neighbours player-fields-set)))))))))
 
 (defn find-winner
   "Tries to find a winner based on the current state of the board.
@@ -161,7 +161,7 @@
   "Annull abandoned game."
   []
   (swap! app-state
-         assoc 
+         assoc
          :answer nil
          :current-field nil
          :timer {:completion 0
@@ -234,18 +234,18 @@
   (let [{:keys [board current-field loading? on-turn verdict]} @app-state
         ownership (get-in board [id :ownership])]
     (when (and (nil? current-field) (not loading?) (nil? verdict))
-          (case ownership
-                :default (swap! app-state (comp (partial make-active id)
-                                                restart-timer
-                                                (fn [app-state] (assoc app-state :current-field id))))
-                :missed (do (test-winner on-turn id)
-                            (swap! app-state (comp toggle-player deselect-current-field)))
-                nil))))
+      (case ownership
+        :default (swap! app-state (comp (partial make-active id)
+                                        restart-timer
+                                        (fn [app-state] (assoc app-state :current-field id))))
+        :missed (do (test-winner on-turn id)
+                  (swap! app-state (comp toggle-player deselect-current-field)))
+        nil))))
 
 (defonce timeout-updater
   (js/setInterval (fn []
                     (let [{{:keys [completion start]} :timer
-                            :keys [answer board current-field hint verdict]} @app-state
+                           :keys [answer board current-field hint verdict]} @app-state
                           time-to-guess (:time-to-guess config)
                           correct-answer (get-in board [current-field :label])]
                       (when (and current-field (nil? verdict))
@@ -255,7 +255,7 @@
                                      [:timer :completion]
                                      (/ (- (.getTime (js/Date.)) start)
                                         (* 10 time-to-guess)))
-                              (when (and (nil? hint) (> completion 50) (or (nil? answer) (= answer "")))
-                                (swap! app-state assoc :hint (generate-hint correct-answer))))
+                            (when (and (nil? hint) (> completion 50) (or (nil? answer) (= answer "")))
+                              (swap! app-state assoc :hint (generate-hint correct-answer))))
                           (make-a-guess)))))
                   1000))
