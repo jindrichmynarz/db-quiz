@@ -37,7 +37,7 @@
              :player-name "Jméno hráče"
              :quiz "kvíz"}
       :labels {:about "O hře"
-               :home "DB Quiz"
+               :home "Domů"
                :loading "Načítání"
                :logo "Logo DB-quizu"
                :not-found "Ouha, stránka nenalezena!"}
@@ -130,7 +130,7 @@ Zvolte *File* → *Publish to the web...* a klikněte na *Publish*."
              :player-name "Player's name"
              :quiz "quiz"}
       :labels {:about "About the game"
-               :home "DB Quiz"
+               :home "Home"
                :loading "Loading"
                :logo "DB-quiz logo"
                :not-found "Crikey! The page was not found."}

@@ -305,8 +305,8 @@
                                 :on-change change
                                 :type "url"
                                 :value doc}]]
-         (when (= language :cs)
-           [:p [:strong (t :home/example-spreadsheets) ": "] [snm-switch]])]))))
+        (when (= language :cs)
+          [:p [:strong (t :home/example-spreadsheets) ": "] [snm-switch]])]))))
 
 (defn share-url
   "URL of the game based on given Google Spreadsheet"
