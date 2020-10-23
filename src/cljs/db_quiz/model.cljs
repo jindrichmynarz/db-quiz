@@ -7,6 +7,7 @@
             [db-quiz.util :refer [number-of-fields render-template]]
             [db-quiz.normalize :as normalize]
             [cljs-http.client :as http]
+            [cljs-http.util :refer [json-decode]]
             [cljs.core.async :refer [<! >! chan]]
             [clojure.string :refer [lower-case replace split]]
             [reagent-modals.modals :as reagent-modals]))
@@ -15,19 +16,25 @@
 
 (def sparql-results-channel
   "Channel that extracts values from application/sparql-results+json format."
-  (letfn [(extract-values [result] (into {} (map (fn [[k v]] [k (:value v)]) result)))]
+  (letfn [(extract-values [result]
+            (->> result
+                 (map (fn [[k v]] [k (:value v)]))
+                 (into {})))]
     (fn []
-      (chan 1 (map (comp (partial map extract-values) :bindings :results :body))))))
+      (chan 1 (map (comp (partial map extract-values)
+                         :bindings
+                         :results
+                         json-decode
+                         :body))))))
 
 (defn sparql-query-channel
-  "Virtuoso-specific JSON-P request"
+  "Run SPARQL `query` on `endpoint`."
   [endpoint query]
-  (http/jsonp endpoint
-              {:query-params {; Since JSON-P does not allow setting Accept header,
-                              ; we need to use Virtuoso-specific query parameter `format`.
-                              :format "application/sparql-results+json"
-                              :query query
-                              :timeout 200000}}))
+  (http/get endpoint
+            {:headers {"Accept" "application/sparql-results+json"}
+             :query-params {:query query
+                            :timeout 200000}
+             :with-credentials? false}))
 
 (defn wrap-load
   [input-channel output-channel]
@@ -69,22 +76,29 @@
   "Load items from Google Spreadsheet's worksheet."
   [spreadsheet-id]
   (let [worksheet-id "od6" ; FIXME: Is this value universally valid?
-        url (str "https://spreadsheets.google.com/feeds/list/" spreadsheet-id "/" worksheet-id "/public/full")
+        url (str "https://spreadsheets.google.com/feeds/list/"
+                 spreadsheet-id
+                 "/"
+                 worksheet-id
+                 "/public/full")
         transform-row (fn [{{label :$t} :gsx$label
-                           {description :$t} :gsx$description}]
+                            {description :$t} :gsx$description}]
                         (when (and label description)
                           {:label label
                            :abbreviation (normalize/abbreviate label)
                            :description description}))
         raw-results-chan (wrap-load (http/jsonp url {:query-params {:alt "json-in-script"}})
-                                    (chan 1 (map (comp (partial map transform-row) :entry :feed :body))))
+                                    (chan 1 (map (comp (partial map transform-row)
+                                                       :entry
+                                                       :feed
+                                                       :body))))
         results-chan (chan)]
     (go (let [results (<! raw-results-chan)
               results-count (count results)]
           (cond (< results-count number-of-fields)
-                  (reagent-modals/modal! (modals/invalid-spreadsheet-rows results-count))
+                (reagent-modals/modal! (modals/invalid-spreadsheet-rows results-count))
                 (every? nil? results)
-                  (reagent-modals/modal! (modals/invalid-spreadsheet-columns))
+                (reagent-modals/modal! (modals/invalid-spreadsheet-columns))
                 :else (>! results-chan (take number-of-fields (shuffle results))))))
     results-chan))
 
@@ -95,7 +109,7 @@
 (defmethod merge-board-with-data :alphabetic
   [board data]
   (letfn [(field-by-initial [initial]
-            (first (filter (fn [[k {:keys [text] :as v}]]
+            (first (filter (fn [[_ {:keys [text]}]]
                              (= (lower-case text) (lower-case initial)))
                            board)))]
     (into {}
