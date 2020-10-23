@@ -27,7 +27,7 @@
                  [com.taoensso/tower "3.1.0-beta3"]]
 
   :plugins [[lein-environ "1.0.0"]
-            [lein-asset-minifier "0.2.2"]]
+            [lein-asset-minifier "0.4.6"]]
 
   :ring {:handler db-quiz.handler/app
          :uberwar-name "db-quiz.war"}
@@ -67,7 +67,7 @@
                                    :exclude [org.clojure/clojurescript]]]
 
                    :source-paths ["env/dev/clj"]
-                   :plugins [[lein-doo "0.1.5-SNAPSHOT"]
+                   :plugins [[lein-doo "0.1.6-SNAPSHOT"]
                              [lein-figwheel "0.5.0-2"]
                              [lein-cljsbuild "1.1.1"]]
 
