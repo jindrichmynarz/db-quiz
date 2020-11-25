@@ -97,7 +97,7 @@
 (defn- btn-class-fn
   "Generate classes for a button based on whether it is active or not."
   [active?]
-  (join-by-space "btn" "btn-default" (if active? "active" "")))
+  (join-by-space "btn" "btn-default" "btn-db" (if active? "active" "")))
 
 (defn mount-tooltip
   "Mounts a Twitter bootstrap tooltip onto an element.
@@ -114,21 +114,70 @@
                        10000)))))
 
 ; ----- Common components -----
+(defn language-picker
+  []
+  (let [options [[:cs "Česky"]
+                 [:en "English"]]
+        click-fn (fn [language]
+                   (swap! app-state (comp #(assoc-in % [:options :selectors] #{})
+                                          #(assoc % :language language)))
+                   (.set cookies "language" (name language) month))]
+    (fn []
+      (let [language (:language @app-state)]
+        [:span
+         (doall (for [[id label] options
+                      :let [active? (= id language)]]
+                  (when-not active?
+                    [:button.as-anchor {
+                                         :key id
+                                         :on-click (partial click-fn id)}
+                     label]
+                    )
+                  ))]))))
 
 (defn menu
-  "Fixed information & navigazion menu"
+  "Fixed information & navigation menu"
   [& {:keys [home?]
       :or {home? false}}]
-  [:div#info-menu.btn-group {:role "group"}
-   (when-not home?
-     [:a.btn.btn-default {:href "#"} [:span.glyphicon.glyphicon-home.glyphicon-start] (t :labels/home)])
-   [:button.btn.btn-default {:on-click #(reagent-modals/modal! (modals/game-info) {:size :lg})}
-    [:span.glyphicon.glyphicon-info-sign.glyphicon-start] (t :labels/about)]])
+  [:nav.navbar.navbar-static-top.navbar-default
+   [:div.container
+    [:div.navbar-header
+     [:button.navbar-toggle.navbar-left {:data-toggle "collapse" :data-target ".navbar-collapse"}
+      [:span.icon-bar]
+      [:span.icon-bar]
+      [:span.icon-bar]
+      ]
+     [:div.navbar-brand.visible-xs
+      [:a.as-anchor {:href "#"} (t :labels/home)]
+      ]
+     ]
+    [:div.navbar-brand.hidden-xs
+     [:a.as-anchor {:href "#"} (t :labels/home)]
+     ]
+    [:div.navbar-collapse.collapse.navbar-right
+     [:ul.nav.navbar-nav.text-center
+      [:li
+       [:button.as-anchor {:on-click #(reagent-modals/modal! (modals/game-info) {:size :lg})} (t :labels/about)]
+       ]
+      [:li
+       [language-picker]
+       ]
+      ]
+     ]
+    ]
+   ])
 
 (defn label-element
   "Label with text for input identified with for-id"
   [for-id text]
-  [:label.col-sm-4.control-label {:for for-id} text])
+  [:label.control-label {:for for-id} text]
+  )
+
+(defn label
+  "Label with text for input identified with for-id"
+  [for-id text]
+  [:label.control-label.player {:for for-id} text]
+  )
 
 (defn single-select
   "Single-select button group. Associates selected value into given id path in app-state.
@@ -147,9 +196,9 @@
       (let [current (get-in @app-state id)]
         [:div.form-group
          [label-element id-str (t label-key)]
-         [:div.btn-group.col-sm-8 {:id id-str
-                                   :on-click click
-                                   :role "group"}
+         [:div {:id id-str
+                :on-click click
+                :role "group"}
           (doall (for [option options]
                    (button current option)))]]))))
 
@@ -168,8 +217,8 @@
                                  (< (count current-value) max-selected))]
         [:div.form-group
          [label-element id-str (t label-key)]
-         [:div.col-sm-8.btn-group-vertical {:id id-str
-                                            :role "group"}
+         [:div.multiple {:id id-str
+                         :role "group"}
           (doall (for [[current-id label] options
                        :let [active? (current-value current-id)
                              update-fn (if active? disj conj)]]
@@ -187,7 +236,7 @@
   (let [cookies? (.get cookies "cookies")
         hidden? (atom false)
         hide (fn [_] (reset! hidden? true)
-                     (.set cookies "cookies" "true" month))]
+               (.set cookies "cookies" "true" month))]
     (fn []
       (when-not (or cookies? @hidden?)
         [:footer#cookies-warning.navbar.navbar-fixed-bottom
@@ -213,14 +262,13 @@
     (fn []
       (let [player-name (get-in @app-state [:players id])]
         [:div {:class classes}
-         [label-element local-id (t label-key)]
-         [:div.col-sm-8
-          [:input.form-control {:id local-id
-                                :max-length 20
-                                :on-change change
-                                :placeholder (t :home/player-name)
-                                :type "text"
-                                :value player-name}]]]))))
+         [label local-id (t label-key)]
+         [:input.form-control {:id local-id
+                               :max-length 20
+                               :on-change change
+                               :placeholder (t :home/player-name)
+                               :type "text"
+                               :value player-name}]]))))
 
 (defn- set-google-spreadsheet-url
   [url]
@@ -231,7 +279,7 @@
 (defn snm-switch
   []
   (let [update-fn (set-google-spreadsheet-url
-                    "https://docs.google.com/spreadsheets/d/1XpkdSYMEEEBPurgfOEOPDn54AqT6uAGsZdEn9Nq0Vsk/edit")]
+                   "https://docs.google.com/spreadsheets/d/1XpkdSYMEEEBPurgfOEOPDn54AqT6uAGsZdEn9Nq0Vsk/edit")]
     (fn []
       [:button.btn.btn-default.btn-xs
        {:on-click (fn [e] (.preventDefault e)
@@ -273,36 +321,18 @@
 (defn field-labelling
   []
   [single-select [:options :labels]
-                 :home/field-labelling
-                 [[:numeric "0-9"]
-                  [:alphabetic "A-Z"]]])
+   :home/field-labelling
+   [[:numeric "0-9"]
+    [:alphabetic "A-Z"]]])
 
-(defn language-picker
-  []
-  (let [options [[:cs "Česky"]
-                 [:en "English"]]
-        click-fn (fn [language]
-                     (swap! app-state (comp #(assoc-in % [:options :selectors] #{})
-                                            #(assoc % :language language)))
-                     (.set cookies "language" (name language) month))]
-    (fn []
-      (let [language (:language @app-state)]
-        [:div.form-group
-         [:div.btn-group.col-sm-4.col-sm-offset-9 {:role "group"}
-          (doall (for [[id label] options
-                       :let [active? (= id language)]]
-                   [:button {:class (btn-class-fn active?)
-                             :key id
-                             :on-click (partial click-fn id)}
-                     label]))]]))))
 
 (defn difficulty-picker
   []
   [single-select [:options :difficulty]
-                 :home.difficulty/label
-                 [[:easy :home.difficulty/easy]
-                  [:normal :home.difficulty/normal]
-                  [:hard :home.difficulty/hard]]])
+   :home.difficulty/label
+   [[:easy :home.difficulty/easy]
+    [:normal :home.difficulty/normal]
+    [:hard :home.difficulty/hard]]])
 
 (defn selector-picker
   []
@@ -329,14 +359,14 @@
     (fn []
       (let [language (:language @app-state)]
         [multi-select [:options :selectors]
-                      :home.domains/label
-                      (language selectors)
-                      :max-selected 3]))))
+         :home.domains/label
+                       (language selectors)
+         :max-selected 3]))))
 
 (defn google-spreadsheet-options
   []
   [:div [google-spreadsheet-url]
-        [share-url]])
+   [share-url]])
 
 (defn dbpedia-options
   []
@@ -357,7 +387,7 @@
             dbpedia-class (activate (= current :dbpedia))
             gdrive-class (activate (= current :gdrive))]
         [:div
-         [:p (t :home/data-source)]
+         [:h2 (t :home/data-source)]
          [:ul.nav.nav-tabs
           [:li {:class dbpedia-class}
            [:a click-handler (t :home/dbpedia)]]
@@ -365,53 +395,64 @@
            [:a click-handler (t :home/google-spreadsheet)]]]
          [:div.tab-content
           [:div {:class (tab-pane-class dbpedia-class)}
-            [dbpedia-options]]
+           [:div.row
+            [:div.col-sm-12
+             [dbpedia-options]
+             ]
+            ]
+           ]
           [:div {:class (tab-pane-class gdrive-class)}
-            [google-spreadsheet-options]]]]))))
+           [:div.row
+            [:div.col-sm-12
+             [google-spreadsheet-options]
+             ]
+            ]
+           ]
+          ]]))))
 
 (defn basic-options
   []
-  [:div
-   [language-picker]
-   [player-form-field :player-1 :home/player-1]
-   [player-form-field :player-2 :home/player-2]])
+  [:div.row
+   [:div.col-md-6.col-sm-12
+    [player-form-field :player-1 :home/player-1]
+    ]
+   [:div.col-md-6.col-sm-12
+    [player-form-field :player-2 :home/player-2]
+    ]
+   ]
+  )
 
 (def start-menu
   (let [options-hidden (atom true)]
     (set-defaults!)
     (fn []
       (annull-game!)
-      [:div.col-sm-6.col-sm-offset-3
-       [:div#start-menu.form-horizontal.row
+      [:div.row
+       [:div.col-sm-10.col-sm-offset-1
         [basic-options]
-        [:div#advanced
-         [:h4
-          [:a {:on-click (fn [e]
-                           (swap! options-hidden not)
-                           (.preventDefault e))}
-           [:span {:class (join-by-space "glyphicon"
-                                         "glyphicon-start"
-                                         (if @options-hidden
-                                           "glyphicon-chevron-right"
-                                           "glyphicon-chevron-down"))}]
-           (t :home/advanced-options)]]
-         (when-not @options-hidden
-           [advanced-options])]
-        [:a.button {:on-click (fn [e]
-                                (let [{:keys [valid? errors]} (validate-options)]
-                                  (if valid?
-                                    (do (randomize-despoilerification)
-                                        (model/load-board-data (init-board)
-                                                               (partial redirect "#play")))
-                                    (reagent-modals/modal! (modals/invalid-options errors)))))}
-         [:span (t :home/play)]]]])))
+        [advanced-options]
+        [:div.row
+         [:div.col-sm-12
+          [:div.text-center
+           [:a.btn.btn-default.btn-play {:on-click (fn [e]
+                                                     (let [{:keys [valid? errors]} (validate-options)]
+                                                       (if valid?
+                                                         (do (randomize-despoilerification)
+                                                           (model/load-board-data (init-board)
+                                                                                  (partial redirect "#play")))
+                                                         (reagent-modals/modal! (modals/invalid-options errors)))))}
+            [:span (t :home/play)]]
+           ]
+          ]
+         ]
+        ]])))
 
 (defn home-page
   []
   (analytics/send-page-view "/")
   (fn []
     [:div
-     [:div.container-fluid
+     [:div.container
       [loading-indicator]
       [menu :home? true]
       [:div#logo [:img {:alt (t :labels/logo)
@@ -427,14 +468,15 @@
   []
   (let [reported? (atom false)]
     (reagent/create-class
-      {:component-did-mount (partial mount-tooltip "report-spoiler")
-       :display-name "report-spoiler"
-       :reagent-render (fn []
+     {:component-did-mount (partial mount-tooltip "report-spoiler")
+      :display-name "report-spoiler"
+      :reagent-render (fn []
+                        [:div.pull-right
                          [:div#report-spoiler {:data-placement "left"
-                                               :class (join-by-space "col-sm-4"
+                                               :class (join-by-space "col-xs-2"
                                                                      (when @reported? "inactive"))
                                                :title (t :tooltips/report-spoiler)}
-                          [:button.btn.btn-default
+                          [:button.btn.btn-default.btn-spoiler
                            {:on-click (fn [e] (when-not @reported?
                                                 (analytics/report-spoiler)
                                                 (reset! reported? true))
@@ -445,7 +487,9 @@
                                                            "glyphicon-exclamation-sign"))}]
                            (if @reported?
                              (t :play/spoiler-reported)
-                             (t :play/report-spoiler))]])})))
+                             (t :play/report-spoiler))]]
+                         ]
+                        )})))
 
 (defn guess
   "Input field for guesses"
@@ -465,55 +509,55 @@
 (defn answer-button
   []
   (reagent/create-class
-    {:component-did-mount (partial mount-tooltip "answer-button")
-     :display-name "answer-button"
-     :reagent-render (fn []
-                       [:button.btn.btn-primary
-                        {:data-placement "bottom"
-                         :on-click make-a-guess
-                         :title (t :tooltips/answer-button)}
-                        [:span.glyphicon.glyphicon-ok.glyphicon-start]
-                        (t :play/guess)])}))
+   {:component-did-mount (partial mount-tooltip "answer-button")
+    :display-name "answer-button"
+    :reagent-render (fn []
+                      [:button.btn.btn-primary.has-offset
+                       {:data-placement "bottom"
+                        :on-click make-a-guess
+                        :title (t :tooltips/answer-button)}
+                       [:span.glyphicon.glyphicon-ok.glyphicon-start]
+                       (t :play/guess)])}))
 
 (defn timeout
   "Progress bar showing the ellapsed time from player's turn."
   [on-turn completion & {:keys [verdict?]}]
   (reagent/create-class
-    {:component-did-mount (partial mount-tooltip "timeout")
-     :display-name "timeout"
-     :reagent-render (fn [on-turn completion & {:keys [verdict?]}]
-                       [:div.row {:data-placement "left"
-                                  :title (t :tooltips/timeout)}
-                        [:div#timeout {:class (name on-turn)}]
-                        [:div#timeout-shade {:class (if (and (not verdict?) (pos? completion))
-                                                        "active"
-                                                        "")}]])}))
+   {:component-did-mount (partial mount-tooltip "timeout")
+    :display-name "timeout"
+    :reagent-render (fn [on-turn completion & {:keys [verdict?]}]
+                      [:div {:data-placement "bottom"
+                             :title (t :tooltips/timeout)}
+                       [:div#timeout {:class (name on-turn)}]
+                       [:div#timeout-shade {:class (if (and (not verdict?) (pos? completion))
+                                                     "active"
+                                                     "")}]])}))
 
 (defn verdict-component
   "Show verdict if answer was correct or not."
   []
   (reagent/create-class
-    {:component-did-mount (partial mount-tooltip "verdict")
-     :display-name "verdict"
-     :reagent-render (fn []
-                       (let [{:keys [board current-field verdict]} @app-state
-                             correct-answer (get-in board [current-field :label])
-                             {:keys [icon
-                                     success
-                                     verdict-class]} (if verdict
-                                                       {:icon canvas/tick
-                                                        :success (t :play.verdict/yes)
-                                                        :verdict-class "alert-success"}
-                                                       {:icon canvas/cross
-                                                        :success (t :play.verdict/no)
-                                                        :verdict-class "alert-danger"})]
-                         [:div#verdict.row {:data-placement "bottom"
-                                            :title (t :tooltips/verdict)}
-                          [:div.col-sm-12
-                           [:div {:class (join-by-space "alert" verdict-class)}
-                            [:p [icon]
-                              success ". " (t :play/correct-answer) " " [:strong correct-answer] "."]
-                            [:div.progress-bar]]]]))}))
+   {:component-did-mount (partial mount-tooltip "verdict")
+    :display-name "verdict"
+    :reagent-render (fn []
+                      (let [{:keys [board current-field verdict]} @app-state
+                            correct-answer (get-in board [current-field :label])
+                            {:keys [icon
+                                    success
+                                    verdict-class]} (if verdict
+                                                      {:icon canvas/tick
+                                                       :success (t :play.verdict/yes)
+                                                       :verdict-class "alert-success"}
+                                                      {:icon canvas/cross
+                                                       :success (t :play.verdict/no)
+                                                       :verdict-class "alert-danger"})]
+                        [:div#verdict.row {:data-placement "bottom"
+                                           :title (t :tooltips/verdict)}
+                         [:div.col-sm-12
+                          [:div {:class (join-by-space "alert" verdict-class)}
+                           [:p [icon]
+                            success ". " (t :play/correct-answer) " " [:strong correct-answer] "."]
+                           [:div.progress-bar]]]]))}))
 
 (defn question-box
   "Box for presenting the question with given id."
@@ -522,24 +566,31 @@
          :keys [board verdict]} @app-state
         {:keys [abbreviation description label]} (board id)]
     [:div
-      [:div.row
-        [:div.col-sm-12
-          [:div.row
-           [:div.col-sm-8 [:h2 abbreviation]]
-           (when (= data-source :dbpedia) [report-spoiler])]
-          [:p#description description]]]
-      [:div.row
-        [:div.col-sm-12
-          [:div.input-group
-            [guess]
-            [:span.input-group-btn
-             [answer-button]
-             [:button.btn.btn-danger
-              {:on-click make-a-guess
-               :title (t :play/skip-title)}
-              [:span.glyphicon.glyphicon-forward.glyphicon-start]
-              (t :play/skip)]]]]]
-      (when-not (nil? verdict) [verdict-component])]))
+     [:div.row
+      [:div.col-sm-12
+       [:div.row
+        [:div.col-xs-4 [:h2 abbreviation]]
+        (when (= data-source :dbpedia) [report-spoiler])]
+       [:p#description description]]]
+     [:div.row
+      [:div.col-sm-7.col-md-8
+       [:div.form-group
+        [guess]
+        ]
+       ]
+      [:div.col-sm-5.col-md-4
+       [:div.pull-right
+        [answer-button]
+        [:button.btn.btn-danger
+         {:on-click make-a-guess
+          :title (t :play/skip-title)}
+         [:span.glyphicon.glyphicon-forward.glyphicon-start]
+         (t :play/skip)]
+        ]
+       ]
+
+      ]
+     (when-not (nil? verdict) [verdict-component])]))
 
 (defn player-on-turn
   "Show the name of the player, whose turn it currently is."
@@ -549,11 +600,15 @@
         player-name (on-turn players)
         [trimmed-name font-class] (trim-player-name player-name)]
     [:div
-      [:div.row
-        [:div#on-turn {:class (join-by-space (name on-turn) font-class)}
-          trimmed-name
-          (when (= player-name "Rybička") [canvas/easter-egg on-turn])]]
-      [timeout on-turn completion :verdict? (not (nil? verdict))]]))
+     [:div.row
+      [:div.col-sm-12
+       [:div#on-turn {:class (join-by-space (name on-turn) font-class)}
+        trimmed-name
+        (when (= player-name "Rybička") [canvas/easter-egg on-turn])]
+       [timeout on-turn completion :verdict? (not (nil? verdict))]
+       ]
+      ]
+     ]))
 
 (defn play-page
   []
@@ -562,12 +617,13 @@
     (let [{:keys [board current-field]} @app-state]
       (if (empty? board)
         (do (redirect "#") ; If no data is loaded, redirect to home page.
-            [:div]) ; Return empty div as a valid Reagent component.
-        [:div.container-fluid
+          [:div]) ; Return empty div as a valid Reagent component.
+        [:div.container
          [menu]
          [:div.row
-          [:div.col-sm-5.col-sm-offset-1 [svg/hex-triangle]]
-          [:div#question-box.col-sm-5
+          [:div.col-sm-12.text-center
+           (when-not current-field[svg/hex-triangle])]
+          [:div#question-box.col-sm-10.col-sm-offset-1
            [player-on-turn]
            (when current-field
              [question-box current-field])]]
@@ -579,14 +635,14 @@
   "Button to send a Facebook status about your game victories."
   [url]
   (let [app-id (if (zero? (.indexOf url "http://localhost")) "873059332790811" "873050382791706")]
-     [:a.btn-hex {:href (str "https://www.facebook.com/dialog/feed?"
-                             (generate-query-string {:app_id app-id
-                                                     :display "page"
-                                                     :name "DB-quiz"
-                                                     :caption (t :end/status)
-                                                     :link url
-                                                     :redirect_uri url}))}
-      [:span.glyphicon.fa.fa-facebook]]))
+    [:a.btn-hex {:href (str "https://www.facebook.com/dialog/feed?"
+                            (generate-query-string {:app_id app-id
+                                                    :display "page"
+                                                    :name "DB-quiz"
+                                                    :caption (t :end/status)
+                                                    :link url
+                                                    :redirect_uri url}))}
+     [:span.glyphicon.fa.fa-facebook]]))
 
 (defn google+button
   "Button to share the game on Google+."
@@ -609,8 +665,8 @@
     [:div#social-media
      [:h3 (t :end/share-victory)]
      [:div [tweet-button url]
-           [google+button url]
-           [facebook-button url]]]))
+      [google+button url]
+      [facebook-button url]]]))
 
 (defn end-page
   []
@@ -624,18 +680,34 @@
       [:div
        (if winner
          [:div#winner
-          [svg/winners-cup (get-in config [:colours player])]
-          [:h3 (t :end/winner)]
-          [:h1 {:class (name player)} winner-name]
-          [social-media-buttons]]
+          [:div.container
+           [menu]
+           [:div.row
+            [:div.text-center
+             [svg/winners-cup (get-in config [:colours player])]
+             [:h3 (t :end/winner)]
+             [:h1 {:class (name player)} winner-name]
+             [social-media-buttons]
+             ]
+            ]
+           ]
+          ]
          [:h1 (t :end/no-winner)])
-       [:a.button {:href (or share-url "")} [:span (t :end/play-again)]]])))
+       [:div.text-center
+        [:a.btn.btn-default.btn-play {:href (or share-url "")} [:span (t :end/play-again)]]
+        ]
+       [reagent-modals/modal-window]
+       ]
+      )))
 
 ; ----- Not found -----
 
 (defn not-found
   []
-  [:div
+  [:div.container.text-center
    [menu]
    [svg/not-found]
-   [:h1 (t :labels/not-found)]])
+   [:h1 (t :labels/not-found)]
+   [reagent-modals/modal-window]
+   ]
+  )
